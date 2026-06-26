@@ -6,6 +6,7 @@ from pathlib import Path
 from agents import Runner
 from dotenv import load_dotenv
 
+from recruiting_agents.chief_recruiter import summarize_run
 from tools.docx_generator import create_docx
 from tools.excel_tracker import (
     find_next_pending_job,
@@ -28,11 +29,11 @@ def load_agent_from_file(module_path: str, function_name: str):
 
 
 def load_recruiter_agent():
-    return load_agent_from_file("agents/recruiter.py", "create_recruiter")
+    return load_agent_from_file("recruiting_agents/recruiter.py", "create_recruiter")
 
 
 def load_resume_agent():
-    return load_agent_from_file("agents/resume_agent.py", "create_resume_agent")
+    return load_agent_from_file("recruiting_agents/resume_agent.py", "create_resume_agent")
 
 
 def safe_folder_name(value: str) -> str:
@@ -169,6 +170,7 @@ Requirements:
     save_tracker(wb)
 
     output_dir = save_outputs(job, analysis, resume_output)
+    summary = summarize_run(analysis, output_dir, resume_generated=True)
 
     print(f"Analyzed row: {row}")
     print(f"Fit Score: {analysis.fit_score}")
@@ -176,6 +178,8 @@ Requirements:
     print("Saved workbook: data/JOB_TRACKER_AGENT_MVP.xlsx")
     print(f"Saved outputs: {output_dir}")
     print(f"Generated resume: {output_dir / 'tailored_resume.docx'}")
+    print(f"Chief Recruiter Status: {summary.status}")
+    print(f"Next Step: {summary.next_step}")
 
 
 if __name__ == "__main__":
