@@ -1,0 +1,153 @@
+{
+  "candidate_name": "Hunter Brown",
+  "job_search_preferences": {
+    "enabled": true,
+    "primary_objective": "Maximize interview probability by finding newly posted, high-quality roles that match Hunter Brown's IT, infrastructure, digital operations, marketing analytics, SEO, web administration, business analysis, and AI automation background.",
+    "search_schedule": {
+      "frequency": "3_times_daily",
+      "preferred_times_local": ["08:00", "13:00", "18:00"],
+      "timezone": "America/Chicago"
+    },
+    "daily_application_goal": {
+      "target_applications_per_day": 10,
+      "quality_over_quantity": true,
+      "minimum_fit_score_to_apply": 75,
+      "human_approval_required_before_submit": true
+    },
+    "primary_sources": [
+      {
+        "name": "LinkedIn",
+        "priority": 1,
+        "notes": "Prioritize LinkedIn for recruiter visibility, networking, and higher-quality professional roles."
+      },
+      {
+        "name": "Indeed",
+        "priority": 2,
+        "notes": "Use Indeed for broad coverage, filtered aggressively for recency and relevance."
+      },
+      {
+        "name": "Company Career Pages",
+        "priority": 3,
+        "notes": "Prefer direct company applications when the role is a strong match."
+      }
+    ],
+    "posting_age_priority": {
+      "highest_priority": "0-24 hours",
+      "high_priority": "24-72 hours",
+      "acceptable": "72 hours-7 days",
+      "low_priority": "7-14 days",
+      "ignore_after": "14 days unless the fit score is exceptionally high"
+    },
+    "work_arrangement_preferences": {
+      "highest_priority": ["Remote"],
+      "acceptable": ["Hybrid", "On-site"],
+      "notes": "Remote is preferred. Hybrid or on-site is acceptable for strong roles in preferred relocation or local markets."
+    },
+    "location_preferences": {
+      "primary": ["Remote"],
+      "local_markets": ["Dallas-Fort Worth, Texas", "Frisco, Texas", "McKinney, Texas"],
+      "relocation_markets": [
+        "Florida",
+        "Colorado",
+        "Las Vegas, Nevada",
+        "Los Angeles, California",
+        "San Diego, California"
+      ]
+    },
+    "employment_preferences": ["Full-time", "Contract", "Hybrid", "Remote"],
+    "target_role_groups": {
+      "IT & Infrastructure": [
+        "IT Support Specialist",
+        "IT Support Analyst",
+        "IT Support Engineer",
+        "Desktop Support Technician",
+        "Endpoint Support Technician",
+        "Field Support Technician",
+        "Service Desk Analyst",
+        "Help Desk Technician",
+        "Help Desk Specialist",
+        "Technical Support Engineer",
+        "Technical Support Analyst",
+        "Infrastructure Support Technician",
+        "Systems Support Specialist",
+        "IT Operations Analyst",
+        "IT Operations Specialist",
+        "NOC Technician",
+        "Network Operations Center Analyst",
+        "Network Support Technician",
+        "Junior Systems Administrator",
+        "Cloud Support Associate"
+      ],
+      "Digital Operations": [
+        "Google Ads Specialist",
+        "Digital Marketing Specialist",
+        "SEO Specialist",
+        "Marketing Operations Specialist",
+        "Web Administrator",
+        "Website Manager",
+        "Analytics Specialist",
+        "Google Analytics Specialist",
+        "Technical Account Coordinator"
+      ],
+      "Business & Technical Operations": [
+        "Business Analyst",
+        "Technical Business Analyst",
+        "IT Business Analyst",
+        "Operations Analyst",
+        "Implementation Specialist",
+        "Customer Success Operations Specialist"
+      ]
+    },
+    "candidate_strengths_to_prioritize": [
+      "Bachelor of Science in Information Technology & Systems",
+      "Google Ads Certification",
+      "CCNA-equivalent networking coursework",
+      "Security+ in progress",
+      "Anthropic Academy AI coursework in progress",
+      "ChatGPT",
+      "Claude",
+      "GitHub",
+      "GitHub Copilot",
+      "Visual Studio Code",
+      "Cursor IDE",
+      "OpenAI API",
+      "OpenAI Agents SDK",
+      "RecruitingOS AI agent development project",
+      "Customer service and client-facing communication",
+      "Operations management",
+      "Business ownership experience",
+      "Website management",
+      "SEO",
+      "Google Analytics",
+      "Google Ads",
+      "Documentation",
+      "Business analysis",
+      "Troubleshooting",
+      "Technical communication"
+    ],
+    "ranking_rules": {
+      "prefer_recent_postings": true,
+      "prefer_direct_company_applications_when_strong_match": true,
+      "prefer_linkedin_and_indeed_over_low_quality_mass_boards": true,
+      "prefer_remote_roles": true,
+      "prefer_roles_with_salary_posted": true,
+      "prefer_growth_paths_into_cloud_cybersecurity_or_ai": true,
+      "prefer_entry_to_early_career_roles": true,
+      "avoid_duplicate_applications": true,
+      "optimize_for_interview_probability_not_application_count": true
+    },
+    "agent_behavior": {
+      "generate_custom_resume_notes": true,
+      "generate_custom_cover_letter": true,
+      "generate_recruiter_message": true,
+      "track_all_jobs_reviewed": true,
+      "track_all_applications_submitted": true,
+      "follow_up_after_days": 7,
+      "never_invent_experience": true,
+      "never_claim_completed_certifications_unless_completed": true,
+      "never_claim_CCNA_certification": true,
+      "never_claim_Security_plus_certification_until_completed": true,
+      "final_application_submission_requires_user_approval": true
+    }
+  }
+}

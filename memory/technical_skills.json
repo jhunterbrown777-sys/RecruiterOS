@@ -1,0 +1,96 @@
+{
+  "technical_skills": {
+    "Python": {
+      "level": "Developing",
+      "confidence": 35
+    },
+    "Git": {
+      "level": "Developing",
+      "confidence": 30
+    },
+    "GitHub": {
+      "level": "Developing",
+      "confidence": 35
+    },
+    "GitHub Copilot": {
+      "level": "Developing",
+      "confidence": 40
+    },
+    "Visual Studio Code": {
+      "level": "Developing",
+      "confidence": 40
+    },
+    "Cursor IDE": {
+      "level": "Developing",
+      "confidence": 40
+    },
+    "ChatGPT": {
+      "level": "Advanced",
+      "confidence": 95
+    },
+    "Claude": {
+      "level": "Advanced",
+      "confidence": 90
+    },
+    "OpenAI API": {
+      "level": "Developing",
+      "confidence": 45
+    },
+    "OpenAI Agents SDK": {
+      "level": "Developing",
+      "confidence": 45
+    },
+    "Prompt Engineering": {
+      "level": "Advanced",
+      "confidence": 90
+    },
+    "AI Workflow Design": {
+      "level": "Advanced",
+      "confidence": 85
+    },
+    "Agentic AI Development": {
+      "level": "Developing",
+      "confidence": 50
+    },
+    "Multi-Agent Systems": {
+      "level": "Developing",
+      "confidence": 45
+    },
+    "Google Ads": {
+      "level": "Advanced",
+      "confidence": 90
+    },
+    "Google Analytics": {
+      "level": "Advanced",
+      "confidence": 85
+    },
+    "SEO": {
+      "level": "Advanced",
+      "confidence": 85
+    },
+    "Website Administration": {
+      "level": "Advanced",
+      "confidence": 85
+    },
+    "Windows": {
+      "level": "Proficient",
+      "confidence": 85
+    },
+    "Networking Fundamentals": {
+      "level": "Intermediate",
+      "confidence": 70
+    },
+    "Business Analysis": {
+      "level": "Intermediate",
+      "confidence": 75
+    },
+    "Documentation": {
+      "level": "Advanced",
+      "confidence": 90
+    },
+    "Customer Service": {
+      "level": "Expert",
+      "confidence": 98
+    }
+  }
+}
