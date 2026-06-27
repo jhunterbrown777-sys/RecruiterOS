@@ -1,38 +1,49 @@
 import json
-import os
 from pathlib import Path
 
+from config.settings import settings
 from profiles.profile import Profile
 
 
 class ProfileManager:
-    def __init__(self, profiles_root: str = "private_memory"):
-        self.profiles_root = Path(profiles_root)
+    def __init__(self):
+        self.root = settings.private_memory_dir
 
-    def load(self, profile_name: str | None = None) -> Profile:
-        active_profile = profile_name or os.getenv("ACTIVE_PROFILE", "hunter")
-        profile_dir = self.profiles_root / active_profile
+    def available_profiles(self):
+        if not self.root.exists():
+            return []
 
-        if not profile_dir.exists():
-            raise FileNotFoundError(f"Profile directory not found: {profile_dir}")
-
-        return Profile(
-            name=active_profile,
-            profile_dir=str(profile_dir),
-            candidate_profile=self._read_text(profile_dir / "candidate_profile.md"),
-            master_resume=self._read_json(profile_dir / "master_resume.json"),
-            preferences=self._read_json(profile_dir / "preferences.json"),
-            technical_skills=self._read_json(profile_dir / "technical_skills.json"),
+        return sorted(
+            [
+                folder.name
+                for folder in self.root.iterdir()
+                if folder.is_dir()
+            ]
         )
 
-    def _read_text(self, path: Path) -> str:
-        if not path.exists():
-            raise FileNotFoundError(f"Missing profile file: {path}")
+    def load(self, profile_name=None):
 
+        profile_name = profile_name or settings.default_profile
+
+        profile_dir = self.root / profile_name
+
+        if not profile_dir.exists():
+            raise FileNotFoundError(
+                f"Profile '{profile_name}' not found.\n"
+                f"Available profiles: {self.available_profiles()}"
+            )
+
+        return Profile(
+            name=profile_name,
+            profile_dir=str(profile_dir),
+            candidate_profile=self._text(profile_dir / "candidate_profile.md"),
+            master_resume=self._json(profile_dir / "master_resume.json"),
+            preferences=self._json(profile_dir / "preferences.json"),
+            technical_skills=self._json(profile_dir / "technical_skills.json"),
+        )
+
+    def _text(self, path):
         return path.read_text(encoding="utf-8")
 
-    def _read_json(self, path: Path) -> dict:
-        if not path.exists():
-            raise FileNotFoundError(f"Missing profile file: {path}")
-
+    def _json(self, path):
         return json.loads(path.read_text(encoding="utf-8"))
