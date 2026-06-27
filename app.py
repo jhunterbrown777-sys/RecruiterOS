@@ -21,24 +21,41 @@ from tools.resume_docx import create_resume_docx
 load_dotenv()
 
 
-def load_agent_from_file(module_path: str, function_name: str):
+def load_agent_from_file(
+    module_path: str,
+    function_name: str,
+    profile_name: str | None = None,
+):
     path = Path(module_path)
     spec = importlib.util.spec_from_file_location(path.stem, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return getattr(module, function_name)()
+
+    return getattr(module, function_name)(profile_name)
 
 
-def load_recruiter_agent():
-    return load_agent_from_file("recruiting_agents/recruiter.py", "create_recruiter")
+def load_recruiter_agent(profile_name: str | None = None):
+    return load_agent_from_file(
+        "recruiting_agents/recruiter.py",
+        "create_recruiter",
+        profile_name,
+    )
 
 
-def load_resume_agent():
-    return load_agent_from_file("recruiting_agents/resume_agent.py", "create_resume_agent")
+def load_resume_agent(profile_name: str | None = None):
+    return load_agent_from_file(
+        "recruiting_agents/resume_agent.py",
+        "create_resume_agent",
+        profile_name,
+    )
 
 
-def load_ats_agent():
-    return load_agent_from_file("recruiting_agents/ats_agent.py", "create_ats_agent")
+def load_ats_agent(profile_name: str | None = None):
+    return load_agent_from_file(
+        "recruiting_agents/ats_agent.py",
+        "create_ats_agent",
+        profile_name,
+    )
 
 
 def safe_folder_name(value: str) -> str:
@@ -123,6 +140,8 @@ def save_outputs(job, analysis, resume_output=None, ats_review=None):
 
 
 def main():
+    profile_name = None
+
     wb, ws = load_tracker()
     row = find_next_pending_job(ws)
 
@@ -132,9 +151,9 @@ def main():
 
     job = read_job(ws, row)
 
-    recruiter_agent = load_recruiter_agent()
-    resume_agent = load_resume_agent()
-    ats_agent = load_ats_agent()
+    recruiter_agent = load_recruiter_agent(profile_name)
+resume_agent = load_resume_agent(profile_name)
+ats_agent = load_ats_agent(profile_name)
 
     job_prompt = f"""
 Analyze this job for Hunter Brown.

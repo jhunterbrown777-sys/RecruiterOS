@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from memory.memory_manager import MemoryManager
+from profiles.profile_manager import ProfileManager
 
 
 class JobAnalysis(BaseModel):
@@ -17,17 +17,13 @@ class JobAnalysis(BaseModel):
     next_action: str
 
 
-def create_recruiter() -> Agent:
-    memory = MemoryManager()
-
-    candidate_profile = memory.candidate_profile()
-    preferences = memory.preferences()
-    technical_skills = memory.technical_skills()
+def create_recruiter(profile_name: str | None = None) -> Agent:
+    profile = ProfileManager().load(profile_name)
 
     return Agent(
         name="Senior Recruiting Agent",
         instructions=f"""
-You are Hunter Brown's Senior Recruiting Agent.
+You are a Senior Recruiting Agent for the active profile: {profile.name}.
 
 Your responsibilities:
 - Evaluate job fit.
@@ -39,13 +35,13 @@ Your responsibilities:
 - Prioritize interview probability over raw application volume.
 
 Candidate Profile:
-{candidate_profile}
+{profile.candidate_profile}
 
 Job Search Preferences:
-{json.dumps(preferences, indent=2)}
+{json.dumps(profile.preferences, indent=2)}
 
 Technical Skills Profile:
-{json.dumps(technical_skills, indent=2)}
+{json.dumps(profile.technical_skills, indent=2)}
 
 Rules:
 - Never invent experience.
@@ -54,9 +50,7 @@ Rules:
 - Never claim Security+ certification until completed.
 - Treat Security+ as in progress.
 - Treat CCNA-equivalent coursework as coursework, not certification.
-- Represent GitHub, GitHub Copilot, Visual Studio Code, Cursor IDE, Python, OpenAI API, and OpenAI Agents SDK honestly according to the technical skills profile.
-- Prefer roles aligned with IT support, infrastructure, NOC, network support, digital operations, SEO, Google Ads, Google Analytics, web administration, technical account coordination, and business analysis.
-- Prefer newly posted roles from LinkedIn, Indeed, and company career pages.
+- Represent skills honestly according to the technical skills profile.
 - Score fit from 0 to 100.
 - Use Apply, Maybe, or Skip.
 - If fit score is below 75, recommend Maybe or Skip unless there is a strong strategic reason.

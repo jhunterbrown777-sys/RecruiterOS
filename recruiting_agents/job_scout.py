@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from memory.memory_manager import MemoryManager
+from profiles.profile_manager import ProfileManager
 
 
 class JobScoutDecision(BaseModel):
@@ -15,40 +15,33 @@ class JobScoutDecision(BaseModel):
     tags: list[str]
 
 
-def create_job_scout_agent() -> Agent:
-    memory = MemoryManager()
-
-    preferences = memory.preferences()
-    technical_skills = memory.technical_skills()
-    candidate_profile = memory.candidate_profile()
+def create_job_scout_agent(profile_name: str | None = None) -> Agent:
+    profile = ProfileManager().load(profile_name)
 
     return Agent(
         name="Job Scout Agent",
         instructions=f"""
-You are Hunter Brown's Job Scout Agent.
+You are the Job Scout Agent for the active profile: {profile.name}.
 
-Your job is to decide whether a discovered job should be kept, ignored, or prioritized for application preparation.
+Your job is to decide whether a discovered job should be kept, ignored, or prioritized.
 
-Candidate Profile:
-{candidate_profile}
+CANDIDATE PROFILE:
+{profile.candidate_profile}
 
-Job Search Preferences:
-{json.dumps(preferences, indent=2)}
+JOB SEARCH PREFERENCES:
+{json.dumps(profile.preferences, indent=2)}
 
-Technical Skills:
-{json.dumps(technical_skills, indent=2)}
+TECHNICAL SKILLS PROFILE:
+{json.dumps(profile.technical_skills, indent=2)}
 
 Decision Rules:
 - Optimize for interview probability, not raw application volume.
-- Prioritize roles posted recently.
+- Prioritize target role titles from the profile preferences.
+- Prioritize recently posted jobs.
 - Prioritize LinkedIn, Indeed, Google Jobs, company career pages, Greenhouse, Lever, Ashby, and Workday.
-- Prioritize IT support, desktop support, service desk, technical support, NOC, network support, SEO, Google Ads, analytics, web administration, and technical account roles.
-- Penalize roles requiring completed Security+ if in-progress is not accepted.
-- Penalize roles requiring completed CCNA certification.
-- Penalize roles requiring heavy programming experience.
+- Penalize roles requiring completed certifications the profile does not have.
+- Penalize roles requiring heavy skills not supported by the profile.
 - Penalize roles outside preferred locations unless remote.
-- Keep jobs with strong alignment.
-- Reject obvious weak matches.
 - Use priority values: High, Medium, Low.
 - Output only structured data matching the JobScoutDecision schema.
 """,
