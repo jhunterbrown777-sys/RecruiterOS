@@ -1,6 +1,10 @@
 from database.sqlite_manager import SQLiteManager
+from services.ashby import AshbyProvider
 from services.google_jobs import GoogleJobsProvider
+from services.greenhouse import GreenhouseProvider
+from services.lever import LeverProvider
 from services.manual_provider import ManualProvider
+from services.workday import WorkdayProvider
 
 
 class DiscoveryPipeline:
@@ -9,6 +13,10 @@ class DiscoveryPipeline:
         self.providers = [
             ManualProvider(),
             GoogleJobsProvider(),
+            GreenhouseProvider(),
+            LeverProvider(),
+            AshbyProvider(),
+            WorkdayProvider(),
         ]
 
     def run(self):
