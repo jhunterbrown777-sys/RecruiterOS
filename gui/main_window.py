@@ -15,46 +15,15 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("RecruiterOS")
-        self.resize(1200, 750)
+        self.setWindowTitle("RecruiterOS — Mission Control")
+        self.resize(1350, 820)
 
         self.controller = AppController()
 
         root = QWidget()
         root_layout = QHBoxLayout()
 
-        sidebar = QVBoxLayout()
-
-        logo = QLabel("RecruiterOS")
-        logo.setObjectName("Logo")
-
-        dashboard_button = QPushButton("Dashboard")
-        dashboard_button.setObjectName("SidebarButton")
-
-        discover_button = QPushButton("Discover")
-        discover_button.setObjectName("SidebarButton")
-
-        jobs_button = QPushButton("Jobs")
-        jobs_button.setObjectName("SidebarButton")
-
-        companies_button = QPushButton("Companies")
-        companies_button.setObjectName("SidebarButton")
-
-        settings_button = QPushButton("Settings")
-        settings_button.setObjectName("SidebarButton")
-
-        sidebar.addWidget(logo)
-        sidebar.addWidget(dashboard_button)
-        sidebar.addWidget(discover_button)
-        sidebar.addWidget(jobs_button)
-        sidebar.addWidget(companies_button)
-        sidebar.addStretch()
-        sidebar.addWidget(settings_button)
-
-        sidebar_widget = QWidget()
-        sidebar_widget.setObjectName("Sidebar")
-        sidebar_widget.setLayout(sidebar)
-        sidebar_widget.setFixedWidth(220)
+        sidebar_widget = self.build_sidebar()
 
         self.dashboard = DashboardPage(self.controller)
 
@@ -66,85 +35,151 @@ class MainWindow(QMainWindow):
 
         self.apply_styles()
 
+    def build_sidebar(self):
+        sidebar = QVBoxLayout()
+
+        logo = QLabel("RecruiterOS")
+        logo.setObjectName("Logo")
+
+        subtitle = QLabel("Mission Control")
+        subtitle.setObjectName("SidebarSubtitle")
+
+        sidebar.addWidget(logo)
+        sidebar.addWidget(subtitle)
+
+        buttons = [
+            "Mission Control",
+            "Discover",
+            "Jobs",
+            "Companies",
+            "Documents",
+            "CRM",
+            "Analytics",
+        ]
+
+        for label in buttons:
+            button = QPushButton(label)
+            button.setObjectName("SidebarButton")
+            sidebar.addWidget(button)
+
+        sidebar.addStretch()
+
+        settings_button = QPushButton("Settings")
+        settings_button.setObjectName("SidebarButton")
+        sidebar.addWidget(settings_button)
+
+        sidebar_widget = QWidget()
+        sidebar_widget.setObjectName("Sidebar")
+        sidebar_widget.setLayout(sidebar)
+        sidebar_widget.setFixedWidth(240)
+
+        return sidebar_widget
+
     def apply_styles(self):
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #0f172a;
+                background-color: #0b1120;
             }
 
             QWidget {
-                background-color: #0f172a;
+                background-color: #0b1120;
                 color: #e5e7eb;
                 font-family: Segoe UI;
                 font-size: 14px;
             }
 
             #Sidebar {
-                background-color: #111827;
-                border-right: 1px solid #1f2937;
+                background-color: #0f172a;
+                border-right: 1px solid #1e293b;
             }
 
             #Logo {
-                font-size: 24px;
+                font-size: 25px;
                 font-weight: bold;
-                color: #60a5fa;
-                padding: 20px;
+                color: #38bdf8;
+                padding: 22px 20px 0px 20px;
+            }
+
+            #SidebarSubtitle {
+                color: #94a3b8;
+                padding: 0px 20px 18px 20px;
             }
 
             #SidebarButton {
                 background-color: transparent;
-                color: #d1d5db;
+                color: #cbd5e1;
                 text-align: left;
-                padding: 12px;
+                padding: 12px 16px;
+                margin: 2px 10px;
                 border: none;
-                border-radius: 8px;
+                border-radius: 10px;
             }
 
             #SidebarButton:hover {
-                background-color: #1f2937;
+                background-color: #1e293b;
+                color: #f8fafc;
             }
 
             #PageTitle {
-                font-size: 28px;
+                font-size: 32px;
                 font-weight: bold;
-                color: #f9fafb;
+                color: #f8fafc;
+                margin-top: 12px;
             }
 
             #PageSubtitle {
-                color: #9ca3af;
-                margin-bottom: 20px;
+                color: #94a3b8;
+                margin-bottom: 18px;
             }
 
             #SectionTitle {
-                font-size: 18px;
+                font-size: 17px;
                 font-weight: bold;
-                margin-top: 20px;
+                color: #f8fafc;
+                margin-bottom: 8px;
             }
 
             #StatCard {
-                background-color: #111827;
-                border: 1px solid #1f2937;
-                border-radius: 12px;
-                padding: 16px;
-                min-height: 100px;
+                background-color: #0f172a;
+                border: 1px solid #1e293b;
+                border-radius: 14px;
+                padding: 18px;
+                min-height: 105px;
             }
 
             #StatTitle {
-                color: #9ca3af;
+                color: #94a3b8;
                 font-size: 13px;
             }
 
             #StatValue {
                 color: #22c55e;
-                font-size: 30px;
+                font-size: 31px;
                 font-weight: bold;
+            }
+
+            #Panel {
+                background-color: #0f172a;
+                border: 1px solid #1e293b;
+                border-radius: 14px;
+                padding: 12px;
             }
 
             QListWidget {
                 background-color: #111827;
                 border: 1px solid #1f2937;
-                border-radius: 12px;
+                border-radius: 10px;
                 padding: 8px;
+                color: #e5e7eb;
+            }
+
+            QListWidget::item {
+                padding: 7px;
+            }
+
+            QListWidget::item:hover {
+                background-color: #1f2937;
+                border-radius: 6px;
             }
 
             QPushButton {
@@ -152,6 +187,7 @@ class MainWindow(QMainWindow):
                 color: white;
                 padding: 10px;
                 border-radius: 8px;
+                border: none;
             }
 
             QPushButton:hover {

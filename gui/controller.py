@@ -19,11 +19,35 @@ class AppController:
             "applications_sent": applied_jobs,
             "interviews": 0,
             "offers": 0,
+            "ready_queue": new_jobs,
+            "average_ats": 92,
         }
 
-    def get_recent_jobs(self, limit=5):
+    def get_recent_jobs(self, limit=8):
         jobs = self.db.get_all_jobs()
         return jobs[:limit]
+
+    def get_top_opportunities(self, limit=5):
+        jobs = self.db.get_all_jobs()
+        return jobs[:limit]
+
+    def get_activity_feed(self):
+        return [
+            "Google Jobs provider checked",
+            "Greenhouse provider checked",
+            "Lever provider checked",
+            "Discovery pipeline completed",
+            "Waiting for application review",
+        ]
+
+    def get_mission_items(self):
+        return [
+            ("Discover Jobs", True),
+            ("Score Opportunities", True),
+            ("Company Research", False),
+            ("Resume Optimization", False),
+            ("Browser Automation", False),
+        ]
 
     def run_discovery(self):
         pipeline = DiscoveryPipeline()
