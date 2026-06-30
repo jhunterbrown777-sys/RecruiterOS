@@ -1,4 +1,5 @@
 from database.sqlite_manager import SQLiteManager
+from pipelines.discovery_pipeline import DiscoveryPipeline
 
 
 class AppController:
@@ -23,3 +24,8 @@ class AppController:
     def get_recent_jobs(self, limit=5):
         jobs = self.db.get_all_jobs()
         return jobs[:limit]
+
+    def run_discovery(self):
+        pipeline = DiscoveryPipeline()
+        pipeline.run()
+        return self.get_dashboard_stats()
