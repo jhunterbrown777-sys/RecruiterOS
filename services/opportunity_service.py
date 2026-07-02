@@ -27,6 +27,10 @@ class OpportunityService:
         """List all Opportunities belonging to a Candidate."""
         return self.db.get_opportunities(candidate_id)
 
+    def update_opportunity(self, opportunity: Opportunity) -> None:
+        """Persist changes to an existing Opportunity."""
+        self.db.update_opportunity(opportunity)
+
     def list_opportunities_with_jobs(self, candidate_id: int) -> list[tuple[Opportunity, Job | None]]:
         """List a Candidate's Opportunities paired with their Job."""
         opportunities = self.db.get_opportunities(candidate_id)

@@ -75,6 +75,12 @@ class AppController:
         opportunity = Opportunity(candidate_id=candidate.id, job_id=job_id)
         return self.opportunity_service.create_opportunity(opportunity) is not None
 
+    def update_opportunity_status(self, opportunity_id: int, new_status: str) -> Opportunity:
+        opportunity = self.opportunity_service.get_opportunity(opportunity_id)
+        opportunity.status = new_status
+        self.opportunity_service.update_opportunity(opportunity)
+        return opportunity
+
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
 

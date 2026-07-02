@@ -268,6 +268,23 @@ class SQLiteManager:
             updated_at=datetime.fromisoformat(row[5]),
         )
 
+    def update_opportunity(self, opportunity: Opportunity) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE opportunities
+                SET status = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    opportunity.status,
+                    datetime.utcnow().isoformat(),
+                    opportunity.id,
+                ),
+            )
+            conn.commit()
+
     def save_assessment(self, assessment: Assessment) -> int:
         with self.connect() as conn:
             cursor = conn.cursor()

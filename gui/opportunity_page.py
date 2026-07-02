@@ -7,7 +7,19 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QTextEdit,
     QFrame,
+    QComboBox,
+    QPushButton,
 )
+
+ALLOWED_STATUSES = [
+    "SCOUTED",
+    "ASSESSED",
+    "APPLYING",
+    "APPLIED",
+    "INTERVIEWING",
+    "OFFER",
+    "CLOSED",
+]
 
 
 class OpportunityPage(QWidget):
@@ -43,6 +55,8 @@ class OpportunityPage(QWidget):
         root.addWidget(panel)
 
         root.addWidget(self.build_details_panel())
+
+        self._current_opportunity_id = None
 
         self.setLayout(root)
         self.refresh()
@@ -81,6 +95,22 @@ class OpportunityPage(QWidget):
         self.detail_description.setReadOnly(True)
         details_layout.addWidget(self.detail_description)
 
+        status_label = QLabel("Update Status")
+        status_label.setObjectName("SectionTitle")
+        details_layout.addWidget(status_label)
+
+        self.status_combo = QComboBox()
+        self.status_combo.addItems(ALLOWED_STATUSES)
+        details_layout.addWidget(self.status_combo)
+
+        self.save_status_button = QPushButton("Save Status")
+        self.save_status_button.clicked.connect(self.save_status)
+        details_layout.addWidget(self.save_status_button)
+
+        self.status_save_result = QLabel("")
+        self.status_save_result.setObjectName("PageSubtitle")
+        details_layout.addWidget(self.status_save_result)
+
         details_panel.setLayout(details_layout)
         return details_panel
 
@@ -95,19 +125,59 @@ class OpportunityPage(QWidget):
         self.update_details()
 
     def update_details(self):
+        self.status_save_result.setText("")
+
         selected = self.opportunities_list.selectedItems()
 
         if not selected:
             self._show_placeholder()
+            self._hide_status_editor()
             return
 
         opportunity, job = selected[0].data(Qt.ItemDataRole.UserRole)
 
         if job is None:
             self._show_placeholder("Job details unavailable for this Opportunity.")
+        else:
+            self._show_details(opportunity, job)
+
+        self._show_status_editor(opportunity)
+
+    def save_status(self):
+        if self._current_opportunity_id is None:
             return
 
-        self._show_details(opportunity, job)
+        new_status = self.status_combo.currentText()
+        updated = self.controller.update_opportunity_status(self._current_opportunity_id, new_status)
+
+        self.refresh()
+        self._reselect_opportunity(updated.id)
+        self.status_save_result.setText(f"Status saved: {updated.status}")
+
+    def _reselect_opportunity(self, opportunity_id: int):
+        for index in range(self.opportunities_list.count()):
+            item = self.opportunities_list.item(index)
+            opportunity, _job = item.data(Qt.ItemDataRole.UserRole)
+
+            if opportunity.id == opportunity_id:
+                item.setSelected(True)
+                self.opportunities_list.setCurrentItem(item)
+                break
+
+    def _show_status_editor(self, opportunity):
+        self._current_opportunity_id = opportunity.id
+
+        index = self.status_combo.findText(opportunity.status)
+        if index >= 0:
+            self.status_combo.setCurrentIndex(index)
+
+        self.status_combo.setVisible(True)
+        self.save_status_button.setVisible(True)
+
+    def _hide_status_editor(self):
+        self._current_opportunity_id = None
+        self.status_combo.setVisible(False)
+        self.save_status_button.setVisible(False)
 
     def _list_item_text(self, opportunity, job) -> str:
         if job is None:
