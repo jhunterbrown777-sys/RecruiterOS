@@ -121,17 +121,11 @@ class MissionControlPage(QWidget):
 
         self.opportunities_list.clear()
         for job in self.controller.get_top_opportunities():
-            title = job[1]
-            company = job[2]
-            source = job[6]
-            self.opportunities_list.addItem(f"★ {title} — {company} ({source})")
+            self.opportunities_list.addItem(f"★ {job.title} — {job.company} ({job.source})")
 
         self.recent_jobs_list.clear()
         for job in self.controller.get_recent_jobs():
-            title = job[1]
-            company = job[2]
-            source = job[6]
-            self.recent_jobs_list.addItem(f"{title} — {company} ({source})")
+            self.recent_jobs_list.addItem(f"{job.title} — {job.company} ({job.source})")
 
         self.activity_list.clear()
         for item in self.controller.get_activity_feed():

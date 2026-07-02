@@ -394,17 +394,65 @@ class SQLiteManager:
             conn.commit()
             return cursor.lastrowid
 
-    def get_all_jobs(self):
+    def get_all_jobs(self) -> list[Job]:
         with self.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM jobs ORDER BY discovered_at DESC")
-            return cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT id, title, company, location, description, url, source,
+                       work_arrangement, employment_type, salary, recruiter,
+                       date_posted, discovered_at, fit_score, status, applied,
+                       notes, company_size, industry, ats_platform, remote
+                FROM jobs
+                ORDER BY discovered_at DESC
+                """
+            )
+            rows = cursor.fetchall()
 
-    def get_new_jobs(self):
+            return [self._row_to_job(row) for row in rows]
+
+    def get_new_jobs(self) -> list[Job]:
         with self.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM jobs WHERE status = 'NEW' ORDER BY discovered_at DESC")
-            return cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT id, title, company, location, description, url, source,
+                       work_arrangement, employment_type, salary, recruiter,
+                       date_posted, discovered_at, fit_score, status, applied,
+                       notes, company_size, industry, ats_platform, remote
+                FROM jobs
+                WHERE status = 'NEW'
+                ORDER BY discovered_at DESC
+                """
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_job(row) for row in rows]
+
+    def _row_to_job(self, row) -> Job:
+        return Job(
+            id=row[0],
+            title=row[1],
+            company=row[2],
+            location=row[3] or "",
+            description=row[4] or "",
+            url=row[5] or "",
+            source=row[6] or "",
+            work_arrangement=row[7] or "",
+            employment_type=row[8] or "",
+            salary=row[9],
+            recruiter=row[10],
+            date_posted=row[11],
+            discovered_at=datetime.fromisoformat(row[12]) if row[12] else datetime.utcnow(),
+            fit_score=row[13],
+            status=row[14] or "NEW",
+            applied=bool(row[15]),
+            notes=row[16] or "",
+            company_size=row[17] or "",
+            industry=row[18] or "",
+            ats_platform=row[19] or "",
+            remote=bool(row[20]),
+        )
 
     def get_recruiters(self):
         with self.connect() as conn:

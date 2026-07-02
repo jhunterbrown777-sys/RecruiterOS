@@ -11,8 +11,8 @@ class AppController:
         jobs = self.db.get_all_jobs()
 
         total_jobs = len(jobs)
-        new_jobs = len([job for job in jobs if job[14] == "NEW"]) if jobs else 0
-        applied_jobs = len([job for job in jobs if job[15] == 1]) if jobs else 0
+        new_jobs = len([job for job in jobs if job.status == "NEW"]) if jobs else 0
+        applied_jobs = len([job for job in jobs if job.applied]) if jobs else 0
 
         return {
             "jobs_discovered": total_jobs,
