@@ -1,6 +1,7 @@
 from config.settings import settings
 from database.sqlite_manager import SQLiteManager
 from models.candidate import Candidate
+from models.opportunity import Opportunity
 from services.candidate_service import CandidateService
 from services.discovery_service import DiscoveryService
 from services.opportunity_service import OpportunityService
@@ -68,6 +69,11 @@ class AppController:
     def get_opportunities(self):
         candidate = self.get_candidate()
         return self.opportunity_service.list_opportunities_with_jobs(candidate.id)
+
+    def create_opportunity_for_job(self, job_id: int) -> bool:
+        candidate = self.get_candidate()
+        opportunity = Opportunity(candidate_id=candidate.id, job_id=job_id)
+        return self.opportunity_service.create_opportunity(opportunity) is not None
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()

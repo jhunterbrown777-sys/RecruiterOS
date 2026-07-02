@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -6,6 +7,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFrame,
     QListWidget,
+    QListWidgetItem,
     QGridLayout,
 )
 
@@ -73,7 +75,7 @@ class MissionControlPage(QWidget):
 
         main_grid.addWidget(self.panel("Top Opportunities", self.opportunities_list), 0, 0)
         main_grid.addWidget(self.panel("Today's Mission", self.mission_list), 0, 1)
-        main_grid.addWidget(self.panel("Recent Jobs", self.recent_jobs_list), 1, 0)
+        main_grid.addWidget(self.build_recent_jobs_panel(), 1, 0)
         main_grid.addWidget(self.panel("AI Activity", self.activity_list), 1, 1)
         main_grid.addWidget(self.panel("Ready Queue", self.queue_list), 2, 0, 1, 2)
 
@@ -94,6 +96,50 @@ class MissionControlPage(QWidget):
 
         self.setLayout(root)
         self.refresh()
+
+    def build_recent_jobs_panel(self) -> QFrame:
+        frame = QFrame()
+        frame.setObjectName("Panel")
+
+        layout = QVBoxLayout()
+
+        label = QLabel("Recent Jobs")
+        label.setObjectName("SectionTitle")
+
+        layout.addWidget(label)
+        layout.addWidget(self.recent_jobs_list)
+
+        self.create_opportunity_button = QPushButton("Create Opportunity")
+        self.create_opportunity_button.setEnabled(False)
+        self.create_opportunity_button.clicked.connect(self.create_opportunity)
+        layout.addWidget(self.create_opportunity_button)
+
+        self.create_opportunity_status = QLabel("")
+        self.create_opportunity_status.setObjectName("PageSubtitle")
+        layout.addWidget(self.create_opportunity_status)
+
+        frame.setLayout(layout)
+
+        self.recent_jobs_list.itemSelectionChanged.connect(self.update_create_opportunity_button)
+
+        return frame
+
+    def update_create_opportunity_button(self):
+        self.create_opportunity_button.setEnabled(bool(self.recent_jobs_list.selectedItems()))
+
+    def create_opportunity(self):
+        selected = self.recent_jobs_list.selectedItems()
+
+        if not selected:
+            return
+
+        job = selected[0].data(Qt.ItemDataRole.UserRole)
+        created = self.controller.create_opportunity_for_job(job.id)
+
+        if created:
+            self.create_opportunity_status.setText(f"Added to Opportunities: {job.title} — {job.company}")
+        else:
+            self.create_opportunity_status.setText(f"Already tracked: {job.title} — {job.company}")
 
     def panel(self, title: str, widget: QWidget) -> QFrame:
         frame = QFrame()
@@ -125,7 +171,12 @@ class MissionControlPage(QWidget):
 
         self.recent_jobs_list.clear()
         for job in self.controller.get_recent_jobs():
-            self.recent_jobs_list.addItem(f"{job.title} — {job.company} ({job.source})")
+            item = QListWidgetItem(f"{job.title} — {job.company} ({job.source})")
+            item.setData(Qt.ItemDataRole.UserRole, job)
+            self.recent_jobs_list.addItem(item)
+
+        self.create_opportunity_status.setText("")
+        self.update_create_opportunity_button()
 
         self.activity_list.clear()
         for item in self.controller.get_activity_feed():
