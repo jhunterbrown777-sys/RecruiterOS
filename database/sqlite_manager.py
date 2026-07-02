@@ -40,6 +40,7 @@ class SQLiteManager:
     def initialize_database(self):
         with self.connect() as conn:
             cursor = conn.cursor()
+            self._migrate_legacy_documents_table(cursor)
             cursor.execute(CREATE_CANDIDATES_TABLE)
             cursor.execute(CREATE_RESUMES_TABLE)
             cursor.execute(CREATE_COMPANIES_TABLE)
@@ -53,6 +54,28 @@ class SQLiteManager:
             cursor.execute(CREATE_DOCUMENTS_TABLE)
             cursor.execute(CREATE_COVER_LETTERS_TABLE)
             conn.commit()
+
+    def _migrate_legacy_documents_table(self, cursor) -> None:
+        """Drop the pre-candidate-scoped `documents` table shape.
+
+        That table had zero callers and always stayed empty (see
+        docs/DOMAIN_MODEL_REVIEW.md finding 2), so dropping it loses no
+        user data. Guarded by an emptiness check regardless, so a
+        populated table is left untouched instead of silently discarded.
+        """
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documents'")
+        if cursor.fetchone() is None:
+            return
+
+        cursor.execute("PRAGMA table_info(documents)")
+        columns = {row[1] for row in cursor.fetchall()}
+
+        if "candidate_id" in columns:
+            return
+
+        cursor.execute("SELECT COUNT(*) FROM documents")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("DROP TABLE documents")
 
     def save_candidate(self, candidate: Candidate) -> int:
         with self.connect() as conn:
