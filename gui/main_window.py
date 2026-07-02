@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from gui.controller import AppController
+from gui.cover_letter_page import CoverLetterPage
 from gui.dashboard import DashboardPage
 from gui.document_page import DocumentPage
 from gui.opportunity_page import OpportunityPage
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         self.settings_page = SettingsPage(self.controller)
         self.opportunity_page = OpportunityPage(self.controller)
         self.resume_page = ResumePage(self.controller)
+        self.cover_letter_page = CoverLetterPage(self.controller)
         self.document_page = DocumentPage(self.controller)
 
         self.pages = QStackedWidget()
@@ -41,6 +43,7 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.settings_page)
         self.pages.addWidget(self.opportunity_page)
         self.pages.addWidget(self.resume_page)
+        self.pages.addWidget(self.cover_letter_page)
         self.pages.addWidget(self.document_page)
 
         root_layout.addWidget(sidebar_widget)
@@ -52,6 +55,7 @@ class MainWindow(QMainWindow):
         self.settings_button.clicked.connect(self.show_settings)
         self.opportunities_button.clicked.connect(self.show_opportunities)
         self.resume_button.clicked.connect(self.show_resume)
+        self.cover_letters_button.clicked.connect(self.show_cover_letters)
         self.documents_button.clicked.connect(self.show_documents)
 
         self.apply_styles()
@@ -67,6 +71,10 @@ class MainWindow(QMainWindow):
     def show_resume(self):
         self.resume_page.refresh()
         self.pages.setCurrentWidget(self.resume_page)
+
+    def show_cover_letters(self):
+        self.cover_letter_page.refresh()
+        self.pages.setCurrentWidget(self.cover_letter_page)
 
     def show_documents(self):
         self.document_page.refresh()
@@ -89,6 +97,7 @@ class MainWindow(QMainWindow):
             "Discover",
             "Opportunities",
             "Resume",
+            "Cover Letters",
             "Companies",
             "Documents",
             "CRM",
@@ -104,6 +113,8 @@ class MainWindow(QMainWindow):
                 self.opportunities_button = button
             elif label == "Resume":
                 self.resume_button = button
+            elif label == "Cover Letters":
+                self.cover_letters_button = button
             elif label == "Documents":
                 self.documents_button = button
 
