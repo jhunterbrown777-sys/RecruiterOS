@@ -1,7 +1,9 @@
 from config.settings import settings
 from database.sqlite_manager import SQLiteManager
+from models.assessment import Assessment
 from models.candidate import Candidate
 from models.opportunity import Opportunity
+from services.assessment_service import AssessmentService
 from services.candidate_service import CandidateService
 from services.discovery_service import DiscoveryService
 from services.opportunity_service import OpportunityService
@@ -13,6 +15,7 @@ class AppController:
         self.discovery_service = DiscoveryService()
         self.candidate_service = CandidateService()
         self.opportunity_service = OpportunityService()
+        self.assessment_service = AssessmentService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -80,6 +83,19 @@ class AppController:
         opportunity.status = new_status
         self.opportunity_service.update_opportunity(opportunity)
         return opportunity
+
+    def analyze_opportunity(self, opportunity_id: int) -> Assessment:
+        opportunity = self.opportunity_service.get_opportunity(opportunity_id)
+        job = self.db.get_job(opportunity.job_id)
+
+        if job is None:
+            raise RuntimeError("Cannot analyze: Job details unavailable for this Opportunity.")
+
+        return self.assessment_service.generate_assessment(opportunity, job)
+
+    def get_latest_assessment(self, opportunity_id: int) -> Assessment | None:
+        assessments = self.assessment_service.list_assessments(opportunity_id)
+        return assessments[0] if assessments else None
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()

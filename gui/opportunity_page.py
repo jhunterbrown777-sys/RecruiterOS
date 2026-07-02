@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QApplication,
     QWidget,
     QVBoxLayout,
     QLabel,
@@ -111,6 +112,40 @@ class OpportunityPage(QWidget):
         self.status_save_result.setObjectName("PageSubtitle")
         details_layout.addWidget(self.status_save_result)
 
+        assessment_title = QLabel("Latest Assessment")
+        assessment_title.setObjectName("SectionTitle")
+        details_layout.addWidget(assessment_title)
+
+        self.analyze_button = QPushButton("Analyze Opportunity")
+        self.analyze_button.clicked.connect(self.analyze_opportunity)
+        details_layout.addWidget(self.analyze_button)
+
+        self.assessment_result = QLabel("")
+        self.assessment_result.setObjectName("PageSubtitle")
+        details_layout.addWidget(self.assessment_result)
+
+        self.assessment_placeholder = QLabel("No Assessment yet.")
+        self.assessment_placeholder.setObjectName("PageSubtitle")
+        details_layout.addWidget(self.assessment_placeholder)
+
+        self.assessment_score = QLabel("")
+        self.assessment_sub_scores = QLabel("")
+        self.assessment_recommendation = QLabel("")
+        self.assessment_generated_at = QLabel("")
+
+        for label in (
+            self.assessment_score,
+            self.assessment_sub_scores,
+            self.assessment_recommendation,
+        ):
+            details_layout.addWidget(label)
+
+        self.assessment_reasoning = QTextEdit()
+        self.assessment_reasoning.setReadOnly(True)
+        details_layout.addWidget(self.assessment_reasoning)
+
+        details_layout.addWidget(self.assessment_generated_at)
+
         details_panel.setLayout(details_layout)
         return details_panel
 
@@ -126,22 +161,90 @@ class OpportunityPage(QWidget):
 
     def update_details(self):
         self.status_save_result.setText("")
+        self.assessment_result.setText("")
 
         selected = self.opportunities_list.selectedItems()
 
         if not selected:
             self._show_placeholder()
             self._hide_status_editor()
+            self.analyze_button.setVisible(False)
+            self._hide_assessment_display()
             return
 
         opportunity, job = selected[0].data(Qt.ItemDataRole.UserRole)
 
         if job is None:
             self._show_placeholder("Job details unavailable for this Opportunity.")
+            self.analyze_button.setVisible(False)
         else:
             self._show_details(opportunity, job)
+            self.analyze_button.setVisible(True)
 
         self._show_status_editor(opportunity)
+        self._refresh_assessment_display(opportunity.id)
+
+    def analyze_opportunity(self):
+        if self._current_opportunity_id is None:
+            return
+
+        self.analyze_button.setEnabled(False)
+        self.assessment_result.setText("Analyzing…")
+        QApplication.processEvents()
+
+        try:
+            self.controller.analyze_opportunity(self._current_opportunity_id)
+            self.assessment_result.setText("Assessment generated.")
+        except Exception as error:
+            self.assessment_result.setText(f"Analysis failed: {error}")
+        finally:
+            self.analyze_button.setEnabled(True)
+
+        self._refresh_assessment_display(self._current_opportunity_id)
+
+    def _refresh_assessment_display(self, opportunity_id: int):
+        assessment = self.controller.get_latest_assessment(opportunity_id)
+
+        if assessment is None:
+            self._hide_assessment_display()
+            return
+
+        self._show_assessment_display(assessment)
+
+    def _hide_assessment_display(self):
+        self.assessment_placeholder.setVisible(True)
+
+        for widget in (
+            self.assessment_score,
+            self.assessment_sub_scores,
+            self.assessment_recommendation,
+            self.assessment_reasoning,
+            self.assessment_generated_at,
+        ):
+            widget.setVisible(False)
+
+    def _show_assessment_display(self, assessment):
+        self.assessment_placeholder.setVisible(False)
+
+        self.assessment_score.setText(f"Overall Score: {assessment.score}  |  Fit: {assessment.fit_score}")
+        self.assessment_sub_scores.setText(
+            f"Posting Age: {assessment.posting_age_score}  |  Company: {assessment.company_score}  |  "
+            f"Remote: {assessment.remote_score}  |  Salary: {assessment.salary_score}  |  ATS: {assessment.ats_score}"
+        )
+        self.assessment_recommendation.setText(f"Recommendation: {assessment.recommendation}")
+        self.assessment_reasoning.setPlainText(assessment.reasoning)
+        self.assessment_generated_at.setText(
+            f"Generated: {assessment.created_at.strftime('%Y-%m-%d %H:%M')}"
+        )
+
+        for widget in (
+            self.assessment_score,
+            self.assessment_sub_scores,
+            self.assessment_recommendation,
+            self.assessment_reasoning,
+            self.assessment_generated_at,
+        ):
+            widget.setVisible(True)
 
     def save_status(self):
         if self._current_opportunity_id is None:
