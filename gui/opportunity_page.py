@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -24,6 +24,12 @@ ALLOWED_STATUSES = [
 
 
 class OpportunityPage(QWidget):
+    resume_generated = Signal(int)
+    cover_letter_generated = Signal(int)
+    open_resume_workspace_requested = Signal(int)
+    open_cover_letter_workspace_requested = Signal(int)
+    open_documents_requested = Signal()
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
@@ -146,6 +152,34 @@ class OpportunityPage(QWidget):
 
         details_layout.addWidget(self.assessment_generated_at)
 
+        documents_title = QLabel("Documents & Cover Letters")
+        documents_title.setObjectName("SectionTitle")
+        details_layout.addWidget(documents_title)
+
+        self.generate_resume_button = QPushButton("Generate Resume")
+        self.generate_resume_button.clicked.connect(self.generate_resume)
+        details_layout.addWidget(self.generate_resume_button)
+
+        self.generate_cover_letter_button = QPushButton("Generate Cover Letter")
+        self.generate_cover_letter_button.clicked.connect(self.generate_cover_letter)
+        details_layout.addWidget(self.generate_cover_letter_button)
+
+        self.open_resume_workspace_button = QPushButton("Open Resume Workspace")
+        self.open_resume_workspace_button.clicked.connect(self.open_resume_workspace)
+        details_layout.addWidget(self.open_resume_workspace_button)
+
+        self.open_cover_letter_workspace_button = QPushButton("Open Cover Letter Workspace")
+        self.open_cover_letter_workspace_button.clicked.connect(self.open_cover_letter_workspace)
+        details_layout.addWidget(self.open_cover_letter_workspace_button)
+
+        self.open_documents_button = QPushButton("Open Documents")
+        self.open_documents_button.clicked.connect(self.open_documents_requested.emit)
+        details_layout.addWidget(self.open_documents_button)
+
+        self.documents_result = QLabel("")
+        self.documents_result.setObjectName("PageSubtitle")
+        details_layout.addWidget(self.documents_result)
+
         details_panel.setLayout(details_layout)
         return details_panel
 
@@ -162,6 +196,7 @@ class OpportunityPage(QWidget):
     def update_details(self):
         self.status_save_result.setText("")
         self.assessment_result.setText("")
+        self.documents_result.setText("")
 
         selected = self.opportunities_list.selectedItems()
 
@@ -170,6 +205,7 @@ class OpportunityPage(QWidget):
             self._hide_status_editor()
             self.analyze_button.setVisible(False)
             self._hide_assessment_display()
+            self._set_documents_buttons_enabled(False)
             return
 
         opportunity, job = selected[0].data(Qt.ItemDataRole.UserRole)
@@ -177,12 +213,24 @@ class OpportunityPage(QWidget):
         if job is None:
             self._show_placeholder("Job details unavailable for this Opportunity.")
             self.analyze_button.setVisible(False)
+            self._set_documents_buttons_enabled(False)
         else:
             self._show_details(opportunity, job)
             self.analyze_button.setVisible(True)
+            self._set_documents_buttons_enabled(True)
 
         self._show_status_editor(opportunity)
         self._refresh_assessment_display(opportunity.id)
+
+    def _set_documents_buttons_enabled(self, enabled: bool):
+        for button in (
+            self.generate_resume_button,
+            self.generate_cover_letter_button,
+            self.open_resume_workspace_button,
+            self.open_cover_letter_workspace_button,
+            self.open_documents_button,
+        ):
+            button.setEnabled(enabled)
 
     def analyze_opportunity(self):
         if self._current_opportunity_id is None:
@@ -201,6 +249,52 @@ class OpportunityPage(QWidget):
             self.analyze_button.setEnabled(True)
 
         self._refresh_assessment_display(self._current_opportunity_id)
+
+    def generate_resume(self):
+        if self._current_opportunity_id is None:
+            return
+
+        self.generate_resume_button.setEnabled(False)
+        self.documents_result.setText("Generating resume…")
+        QApplication.processEvents()
+
+        try:
+            resume = self.controller.generate_resume_for_opportunity(self._current_opportunity_id)
+            self.documents_result.setText(f"Generated resume: {resume.title}")
+            self.resume_generated.emit(resume.id)
+        except Exception as error:
+            self.documents_result.setText(f"Resume generation failed: {error}")
+        finally:
+            self.generate_resume_button.setEnabled(True)
+
+    def generate_cover_letter(self):
+        if self._current_opportunity_id is None:
+            return
+
+        self.generate_cover_letter_button.setEnabled(False)
+        self.documents_result.setText("Generating cover letter…")
+        QApplication.processEvents()
+
+        try:
+            cover_letter = self.controller.generate_cover_letter_for_opportunity(self._current_opportunity_id)
+            self.documents_result.setText(f"Generated cover letter: {cover_letter.title}")
+            self.cover_letter_generated.emit(cover_letter.id)
+        except Exception as error:
+            self.documents_result.setText(f"Cover letter generation failed: {error}")
+        finally:
+            self.generate_cover_letter_button.setEnabled(True)
+
+    def open_resume_workspace(self):
+        if self._current_opportunity_id is None:
+            return
+
+        self.open_resume_workspace_requested.emit(self._current_opportunity_id)
+
+    def open_cover_letter_workspace(self):
+        if self._current_opportunity_id is None:
+            return
+
+        self.open_cover_letter_workspace_requested.emit(self._current_opportunity_id)
 
     def _refresh_assessment_display(self, opportunity_id: int):
         assessment = self.controller.get_latest_assessment(opportunity_id)

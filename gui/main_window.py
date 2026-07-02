@@ -61,6 +61,12 @@ class MainWindow(QMainWindow):
         self.document_page.open_resume_requested.connect(self.show_resume_and_select)
         self.document_page.open_cover_letter_requested.connect(self.show_cover_letter_and_select)
 
+        self.opportunity_page.resume_generated.connect(self.show_resume_and_select)
+        self.opportunity_page.cover_letter_generated.connect(self.show_cover_letter_and_select)
+        self.opportunity_page.open_resume_workspace_requested.connect(self.show_resume_for_opportunity)
+        self.opportunity_page.open_cover_letter_workspace_requested.connect(self.show_cover_letter_for_opportunity)
+        self.opportunity_page.open_documents_requested.connect(self.show_documents)
+
         self.apply_styles()
 
     def show_settings(self):
@@ -90,6 +96,14 @@ class MainWindow(QMainWindow):
     def show_cover_letter_and_select(self, cover_letter_id: int):
         self.show_cover_letters()
         self.cover_letter_page.select_cover_letter(cover_letter_id)
+
+    def show_resume_for_opportunity(self, opportunity_id: int):
+        self.show_resume()
+        self.resume_page.select_opportunity(opportunity_id)
+
+    def show_cover_letter_for_opportunity(self, opportunity_id: int):
+        self.show_cover_letters()
+        self.cover_letter_page.select_opportunity(opportunity_id)
 
     def build_sidebar(self):
         sidebar = QVBoxLayout()

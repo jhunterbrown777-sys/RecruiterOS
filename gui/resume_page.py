@@ -187,6 +187,13 @@ class ResumePage(QWidget):
         self.generate_button.setEnabled(has_opportunities)
         self.generate_empty_state.setVisible(not has_opportunities)
 
+    def select_opportunity(self, opportunity_id: int):
+        """Best-effort preselect an Opportunity in the generate combo."""
+        index = self.opportunity_combo.findData(opportunity_id)
+
+        if index >= 0:
+            self.opportunity_combo.setCurrentIndex(index)
+
     def _update_create_button_state(self):
         self.create_save_button.setEnabled(bool(self.new_title_input.text().strip()))
 
