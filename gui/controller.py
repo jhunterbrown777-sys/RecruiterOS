@@ -118,6 +118,17 @@ class AppController:
         self.resume_service.update_resume(resume)
         return resume
 
+    def duplicate_resume(self, resume_id: int) -> Resume:
+        original = self.resume_service.get_resume(resume_id)
+        new_resume = Resume(
+            candidate_id=original.candidate_id,
+            title=original.title,
+            content=original.content,
+            version=original.version + 1,
+        )
+        new_resume.id = self.resume_service.create_resume(new_resume)
+        return new_resume
+
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
 

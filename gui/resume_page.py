@@ -79,6 +79,10 @@ class ResumePage(QWidget):
         self.save_content_button.clicked.connect(self.save_resume_content)
         details_layout.addWidget(self.save_content_button)
 
+        self.duplicate_button = QPushButton("Duplicate as New Version")
+        self.duplicate_button.clicked.connect(self.duplicate_resume)
+        details_layout.addWidget(self.duplicate_button)
+
         self.edit_result = QLabel("")
         self.edit_result.setObjectName("PageSubtitle")
         details_layout.addWidget(self.edit_result)
@@ -178,6 +182,16 @@ class ResumePage(QWidget):
         self._select_resume(updated.id)
         self.edit_result.setText(f"Saved: {updated.title}")
 
+    def duplicate_resume(self):
+        if self._current_resume_id is None:
+            return
+
+        new_resume = self.controller.duplicate_resume(self._current_resume_id)
+
+        self.refresh()
+        self._select_resume(new_resume.id)
+        self.edit_result.setText(f"Duplicated as version {new_resume.version}: {new_resume.title}")
+
     def _list_item_text(self, resume) -> str:
         return f"{resume.title} (v{resume.version})"
 
@@ -192,6 +206,7 @@ class ResumePage(QWidget):
             self.detail_dates,
             self.detail_content,
             self.save_content_button,
+            self.duplicate_button,
         ):
             widget.setVisible(False)
 
@@ -213,5 +228,6 @@ class ResumePage(QWidget):
             self.detail_dates,
             self.detail_content,
             self.save_content_button,
+            self.duplicate_button,
         ):
             widget.setVisible(True)
