@@ -1,10 +1,11 @@
 from database.sqlite_manager import SQLiteManager
-from pipelines.discovery_pipeline import DiscoveryPipeline
+from services.discovery_service import DiscoveryService
 
 
 class AppController:
     def __init__(self):
         self.db = SQLiteManager()
+        self.discovery_service = DiscoveryService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -50,6 +51,9 @@ class AppController:
         ]
 
     def run_discovery(self):
-        pipeline = DiscoveryPipeline()
-        pipeline.run()
+        run = self.discovery_service.run_discovery()
+
+        if run.errors:
+            raise RuntimeError("; ".join(run.errors))
+
         return self.get_dashboard_stats()

@@ -1,9 +1,11 @@
-from pipelines.discovery_pipeline import DiscoveryPipeline
+from services.discovery_service import DiscoveryService
 
 
 def main():
-    pipeline = DiscoveryPipeline()
-    pipeline.run()
+    run = DiscoveryService().run_discovery()
+
+    if run.errors:
+        raise RuntimeError("; ".join(run.errors))
 
 
 if __name__ == "__main__":
