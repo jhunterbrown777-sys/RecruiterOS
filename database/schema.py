@@ -108,20 +108,19 @@ CREATE TABLE IF NOT EXISTS assessments (
 CREATE_APPLICATIONS_TABLE = """
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER,
-    company_id INTEGER,
-    status TEXT,
-    resume_path TEXT,
-    cover_letter_path TEXT,
-    recruiter_message_path TEXT,
-    ats_report_path TEXT,
+    opportunity_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'READY_TO_REVIEW',
+    resume_id INTEGER,
+    cover_letter_id INTEGER,
+    notes TEXT,
     applied_at TEXT,
     follow_up_at TEXT,
-    notes TEXT,
     created_at TEXT,
     updated_at TEXT,
-    FOREIGN KEY(job_id) REFERENCES jobs(id),
-    FOREIGN KEY(company_id) REFERENCES companies(id)
+    FOREIGN KEY(opportunity_id) REFERENCES opportunities(id),
+    FOREIGN KEY(resume_id) REFERENCES resumes(id),
+    FOREIGN KEY(cover_letter_id) REFERENCES cover_letters(id),
+    UNIQUE(opportunity_id)
 );
 """
 

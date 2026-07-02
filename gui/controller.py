@@ -2,12 +2,15 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from database.sqlite_manager import SQLiteManager
+from models.application import Application
 from models.assessment import Assessment
 from models.candidate import Candidate
 from models.cover_letter import CoverLetter
 from models.document import Document
+from models.job import Job
 from models.opportunity import Opportunity
 from models.resume import Resume
+from services.application_service import ApplicationService
 from services.assessment_service import AssessmentService
 from services.candidate_service import CandidateService
 from services.cover_letter_service import CoverLetterService
@@ -37,6 +40,15 @@ class DocumentLibraryEntry:
     editable: bool
 
 
+@dataclass
+class ApplicationSummary:
+    """An Application composed with its Opportunity's Job, for list display."""
+
+    application: Application
+    opportunity: Opportunity
+    job: Job | None
+
+
 class AppController:
     def __init__(self):
         self.db = SQLiteManager()
@@ -47,6 +59,7 @@ class AppController:
         self.resume_service = ResumeService()
         self.document_service = DocumentService()
         self.cover_letter_service = CoverLetterService()
+        self.application_service = ApplicationService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -289,6 +302,90 @@ class AppController:
         )
         new_document.id = self.document_service.create_document(new_document)
         return new_document
+
+    def get_applications(self) -> list[ApplicationSummary]:
+        summaries = []
+
+        for application in self.application_service.list_applications():
+            opportunity = self.opportunity_service.get_opportunity(application.opportunity_id)
+
+            if opportunity is None:
+                continue
+
+            job = self.db.get_job(opportunity.job_id)
+            summaries.append(ApplicationSummary(application=application, opportunity=opportunity, job=job))
+
+        return summaries
+
+    def get_application(self, application_id: int) -> Application | None:
+        return self.application_service.get_application(application_id)
+
+    def get_application_for_opportunity(self, opportunity_id: int) -> Application | None:
+        return self.application_service.get_application_by_opportunity(opportunity_id)
+
+    def create_application_for_opportunity(self, opportunity_id: int) -> Application | None:
+        """Create an Application for an Opportunity, or return the existing one."""
+        existing = self.application_service.get_application_by_opportunity(opportunity_id)
+
+        if existing is not None:
+            return existing
+
+        application = Application(opportunity_id=opportunity_id)
+        application.id = self.application_service.create_application(application)
+        return application
+
+    def update_application_status(self, application_id: int, new_status: str) -> Application:
+        application = self.application_service.get_application(application_id)
+        application.status = new_status
+
+        if new_status == "APPLIED" and application.applied_at is None:
+            application.applied_at = datetime.utcnow()
+
+        self.application_service.update_application(application)
+        return application
+
+    def update_application_notes(self, application_id: int, notes: str) -> Application:
+        application = self.application_service.get_application(application_id)
+        application.notes = notes
+        self.application_service.update_application(application)
+        return application
+
+    def attach_resume_to_application(self, application_id: int, resume_id: int | None) -> Application:
+        application = self.application_service.get_application(application_id)
+        application.resume_id = resume_id
+        self.application_service.update_application(application)
+        return application
+
+    def attach_cover_letter_to_application(self, application_id: int, cover_letter_id: int | None) -> Application:
+        application = self.application_service.get_application(application_id)
+        application.cover_letter_id = cover_letter_id
+        self.application_service.update_application(application)
+        return application
+
+    def get_application_package(self, application_id: int) -> dict:
+        """Compose everything an Application Package view needs, read-only."""
+        application = self.application_service.get_application(application_id)
+        opportunity = self.opportunity_service.get_opportunity(application.opportunity_id)
+        job = self.db.get_job(opportunity.job_id) if opportunity else None
+        assessment = self.get_latest_assessment(opportunity.id) if opportunity else None
+        resume = self.resume_service.get_resume(application.resume_id) if application.resume_id else None
+        cover_letter = (
+            self.cover_letter_service.get_cover_letter(application.cover_letter_id)
+            if application.cover_letter_id
+            else None
+        )
+        candidate = self.get_candidate()
+        documents = self.document_service.list_documents(candidate.id)
+
+        return {
+            "application": application,
+            "opportunity": opportunity,
+            "job": job,
+            "assessment": assessment,
+            "resume": resume,
+            "cover_letter": cover_letter,
+            "documents": documents,
+        }
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()

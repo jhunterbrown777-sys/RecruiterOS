@@ -17,6 +17,7 @@ from database.schema import (
     CREATE_RECRUITERS_TABLE,
     CREATE_RESUMES_TABLE,
 )
+from models.application import Application
 from models.assessment import Assessment
 from models.candidate import Candidate
 from models.cover_letter import CoverLetter
@@ -40,7 +41,8 @@ class SQLiteManager:
     def initialize_database(self):
         with self.connect() as conn:
             cursor = conn.cursor()
-            self._migrate_legacy_documents_table(cursor)
+            self._migrate_legacy_table_if_empty(cursor, "documents", "candidate_id")
+            self._migrate_legacy_table_if_empty(cursor, "applications", "opportunity_id")
             cursor.execute(CREATE_CANDIDATES_TABLE)
             cursor.execute(CREATE_RESUMES_TABLE)
             cursor.execute(CREATE_COMPANIES_TABLE)
@@ -55,27 +57,29 @@ class SQLiteManager:
             cursor.execute(CREATE_COVER_LETTERS_TABLE)
             conn.commit()
 
-    def _migrate_legacy_documents_table(self, cursor) -> None:
-        """Drop the pre-candidate-scoped `documents` table shape.
+    def _migrate_legacy_table_if_empty(self, cursor, table_name: str, required_column: str) -> None:
+        """Drop a pre-redesign table shape, if empty, so CREATE TABLE IF NOT EXISTS rebuilds it.
 
-        That table had zero callers and always stayed empty (see
-        docs/DOMAIN_MODEL_REVIEW.md finding 2), so dropping it loses no
-        user data. Guarded by an emptiness check regardless, so a
-        populated table is left untouched instead of silently discarded.
+        Used for `documents` and `applications`, both of which had zero
+        callers and always stayed empty under their prior column shapes
+        (see docs/DOMAIN_MODEL_REVIEW.md findings 2 and 8), so dropping
+        them loses no user data. Guarded by an emptiness check
+        regardless, so a populated table is left untouched instead of
+        silently discarded.
         """
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documents'")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         if cursor.fetchone() is None:
             return
 
-        cursor.execute("PRAGMA table_info(documents)")
+        cursor.execute(f"PRAGMA table_info({table_name})")
         columns = {row[1] for row in cursor.fetchall()}
 
-        if "candidate_id" in columns:
+        if required_column in columns:
             return
 
-        cursor.execute("SELECT COUNT(*) FROM documents")
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
         if cursor.fetchone()[0] == 0:
-            cursor.execute("DROP TABLE documents")
+            cursor.execute(f"DROP TABLE {table_name}")
 
     def save_candidate(self, candidate: Candidate) -> int:
         with self.connect() as conn:
@@ -397,6 +401,122 @@ class SQLiteManager:
                     opportunity.status,
                     datetime.utcnow().isoformat(),
                     opportunity.id,
+                ),
+            )
+            conn.commit()
+
+    def save_application(self, application: Application) -> int | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO applications (
+                    opportunity_id, status, resume_id, cover_letter_id, notes,
+                    applied_at, follow_up_at, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    application.opportunity_id,
+                    application.status,
+                    application.resume_id,
+                    application.cover_letter_id,
+                    application.notes,
+                    application.applied_at.isoformat() if application.applied_at else None,
+                    application.follow_up_at.isoformat() if application.follow_up_at else None,
+                    application.created_at.isoformat(),
+                    application.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid if cursor.rowcount else None
+
+    def get_application(self, application_id: int) -> Application | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, opportunity_id, status, resume_id, cover_letter_id, notes,
+                       applied_at, follow_up_at, created_at, updated_at
+                FROM applications
+                WHERE id = ?
+                """,
+                (application_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_application(row)
+
+    def get_application_by_opportunity(self, opportunity_id: int) -> Application | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, opportunity_id, status, resume_id, cover_letter_id, notes,
+                       applied_at, follow_up_at, created_at, updated_at
+                FROM applications
+                WHERE opportunity_id = ?
+                """,
+                (opportunity_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_application(row)
+
+    def get_applications(self) -> list[Application]:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, opportunity_id, status, resume_id, cover_letter_id, notes,
+                       applied_at, follow_up_at, created_at, updated_at
+                FROM applications
+                ORDER BY updated_at DESC
+                """
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_application(row) for row in rows]
+
+    def _row_to_application(self, row) -> Application:
+        return Application(
+            id=row[0],
+            opportunity_id=row[1],
+            status=row[2],
+            resume_id=row[3],
+            cover_letter_id=row[4],
+            notes=row[5] or "",
+            applied_at=datetime.fromisoformat(row[6]) if row[6] else None,
+            follow_up_at=datetime.fromisoformat(row[7]) if row[7] else None,
+            created_at=datetime.fromisoformat(row[8]),
+            updated_at=datetime.fromisoformat(row[9]),
+        )
+
+    def update_application(self, application: Application) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE applications
+                SET status = ?, resume_id = ?, cover_letter_id = ?, notes = ?,
+                    applied_at = ?, follow_up_at = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    application.status,
+                    application.resume_id,
+                    application.cover_letter_id,
+                    application.notes,
+                    application.applied_at.isoformat() if application.applied_at else None,
+                    application.follow_up_at.isoformat() if application.follow_up_at else None,
+                    datetime.utcnow().isoformat(),
+                    application.id,
                 ),
             )
             conn.commit()

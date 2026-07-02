@@ -2,23 +2,31 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
+APPLICATION_STATUSES = [
+    "READY_TO_REVIEW",
+    "APPLIED",
+    "INTERVIEWING",
+    "OFFER",
+    "REJECTED",
+    "WITHDRAWN",
+]
+
 
 @dataclass
 class Application:
-    job_id: int
-    company_id: int
+    opportunity_id: int
 
     status: str = "READY_TO_REVIEW"
 
-    resume_path: str = ""
-    cover_letter_path: str = ""
-    recruiter_message_path: str = ""
-    ats_report_path: str = ""
+    resume_id: Optional[int] = None
+    cover_letter_id: Optional[int] = None
+
+    notes: str = ""
 
     applied_at: Optional[datetime] = None
     follow_up_at: Optional[datetime] = None
 
-    notes: str = ""
+    id: Optional[int] = None
 
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
