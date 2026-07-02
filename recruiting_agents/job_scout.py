@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from profiles.profile_manager import ProfileManager
+from recruiting_agents.context import RecruiterContext
 
 
 class JobScoutDecision(BaseModel):
@@ -15,24 +15,24 @@ class JobScoutDecision(BaseModel):
     tags: list[str]
 
 
-def create_job_scout_agent(profile_name: str | None = None) -> Agent:
-    profile = ProfileManager().load(profile_name)
+def create_job_scout_agent(context: RecruiterContext) -> Agent:
+    candidate = context.candidate
 
     return Agent(
         name="Job Scout Agent",
         instructions=f"""
-You are the Job Scout Agent for the active profile: {profile.name}.
+You are the Job Scout Agent for the active profile: {candidate.name}.
 
 Your job is to decide whether a discovered job should be kept, ignored, or prioritized.
 
 CANDIDATE PROFILE:
-{profile.candidate_profile}
+{candidate.candidate_profile}
 
 JOB SEARCH PREFERENCES:
-{json.dumps(profile.preferences, indent=2)}
+{json.dumps(candidate.preferences, indent=2)}
 
 TECHNICAL SKILLS PROFILE:
-{json.dumps(profile.technical_skills, indent=2)}
+{json.dumps(candidate.technical_skills, indent=2)}
 
 Decision Rules:
 - Optimize for interview probability, not raw application volume.

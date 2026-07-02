@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from profiles.profile_manager import ProfileManager
+from recruiting_agents.context import RecruiterContext
 
 
 class JobAnalysis(BaseModel):
@@ -17,13 +17,13 @@ class JobAnalysis(BaseModel):
     next_action: str
 
 
-def create_recruiter(profile_name: str | None = None) -> Agent:
-    profile = ProfileManager().load(profile_name)
+def create_recruiter(context: RecruiterContext) -> Agent:
+    candidate = context.candidate
 
     return Agent(
         name="Senior Recruiting Agent",
         instructions=f"""
-You are a Senior Recruiting Agent for the active profile: {profile.name}.
+You are a Senior Recruiting Agent for the active profile: {candidate.name}.
 
 Your responsibilities:
 - Evaluate job fit.
@@ -35,13 +35,13 @@ Your responsibilities:
 - Prioritize interview probability over raw application volume.
 
 Candidate Profile:
-{profile.candidate_profile}
+{candidate.candidate_profile}
 
 Job Search Preferences:
-{json.dumps(profile.preferences, indent=2)}
+{json.dumps(candidate.preferences, indent=2)}
 
 Technical Skills Profile:
-{json.dumps(profile.technical_skills, indent=2)}
+{json.dumps(candidate.technical_skills, indent=2)}
 
 Rules:
 - Never invent experience.

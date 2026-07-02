@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from profiles.profile_manager import ProfileManager
+from recruiting_agents.context import RecruiterContext
 
 
 class ResumeOutput(BaseModel):
@@ -20,27 +20,27 @@ class ResumeOutput(BaseModel):
     honesty_notes: list[str]
 
 
-def create_resume_agent(profile_name: str | None = None) -> Agent:
-    profile = ProfileManager().load(profile_name)
+def create_resume_agent(context: RecruiterContext) -> Agent:
+    candidate = context.candidate
 
     return Agent(
         name="Resume Agent",
         instructions=f"""
-You are the Resume Agent for the active profile: {profile.name}.
+You are the Resume Agent for the active profile: {candidate.name}.
 
 Your job is to generate an honest, ATS-optimized resume structure for a specific job.
 
 MASTER RESUME DATABASE:
-{json.dumps(profile.master_resume, indent=2)}
+{json.dumps(candidate.master_resume, indent=2)}
 
 CANDIDATE PROFILE:
-{profile.candidate_profile}
+{candidate.candidate_profile}
 
 JOB SEARCH PREFERENCES:
-{json.dumps(profile.preferences, indent=2)}
+{json.dumps(candidate.preferences, indent=2)}
 
 TECHNICAL SKILLS PROFILE:
-{json.dumps(profile.technical_skills, indent=2)}
+{json.dumps(candidate.technical_skills, indent=2)}
 
 Rules:
 - Never invent experience.

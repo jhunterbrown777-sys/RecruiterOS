@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from profiles.profile_manager import ProfileManager
+from recruiting_agents.context import RecruiterContext
 
 
 class OpportunityScore(BaseModel):
@@ -21,24 +21,24 @@ class OpportunityScore(BaseModel):
     reasoning: str
 
 
-def create_opportunity_scorer(profile_name: str | None = None) -> Agent:
-    profile = ProfileManager().load(profile_name)
+def create_opportunity_scorer(context: RecruiterContext) -> Agent:
+    candidate = context.candidate
 
     return Agent(
         name="Opportunity Scoring Agent",
         instructions=f"""
-You are the Opportunity Scoring Agent for the active profile: {profile.name}.
+You are the Opportunity Scoring Agent for the active profile: {candidate.name}.
 
 Your job is to rank job opportunities by interview probability and strategic value.
 
 Candidate Profile:
-{profile.candidate_profile}
+{candidate.candidate_profile}
 
 Job Search Preferences:
-{json.dumps(profile.preferences, indent=2)}
+{json.dumps(candidate.preferences, indent=2)}
 
 Technical Skills:
-{json.dumps(profile.technical_skills, indent=2)}
+{json.dumps(candidate.technical_skills, indent=2)}
 
 Scoring dimensions:
 - fit_score: match between the candidate and the job

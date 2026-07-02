@@ -3,7 +3,7 @@ import json
 from agents import Agent
 from pydantic import BaseModel
 
-from profiles.profile_manager import ProfileManager
+from recruiting_agents.context import RecruiterContext
 
 
 class ATSReview(BaseModel):
@@ -18,27 +18,27 @@ class ATSReview(BaseModel):
     final_recommendation: str
 
 
-def create_ats_agent(profile_name: str | None = None) -> Agent:
-    profile = ProfileManager().load(profile_name)
+def create_ats_agent(context: RecruiterContext) -> Agent:
+    candidate = context.candidate
 
     return Agent(
         name="ATS Agent",
         instructions=f"""
-You are the ATS Optimization Agent for the active profile: {profile.name}.
+You are the ATS Optimization Agent for the active profile: {candidate.name}.
 
 Your job is to compare a tailored resume against a job description and estimate ATS/recruiter alignment.
 
 MASTER RESUME DATABASE:
-{json.dumps(profile.master_resume, indent=2)}
+{json.dumps(candidate.master_resume, indent=2)}
 
 CANDIDATE PROFILE:
-{profile.candidate_profile}
+{candidate.candidate_profile}
 
 JOB SEARCH PREFERENCES:
-{json.dumps(profile.preferences, indent=2)}
+{json.dumps(candidate.preferences, indent=2)}
 
 TECHNICAL SKILLS PROFILE:
-{json.dumps(profile.technical_skills, indent=2)}
+{json.dumps(candidate.technical_skills, indent=2)}
 
 Rules:
 - Never suggest adding false experience.

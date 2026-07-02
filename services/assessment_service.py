@@ -1,10 +1,10 @@
 from agents import Runner
 
-from config.settings import settings
 from database.sqlite_manager import SQLiteManager
 from models.assessment import Assessment
 from models.job import Job
 from models.opportunity import Opportunity
+from recruiting_agents.context import RecruiterContextBuilder
 from recruiting_agents.opportunity_scorer import create_opportunity_scorer
 
 
@@ -18,6 +18,7 @@ class AssessmentService:
 
     def __init__(self):
         self.db = SQLiteManager()
+        self.context_builder = RecruiterContextBuilder()
 
     def create_assessment(self, assessment: Assessment) -> int:
         """Persist a new Assessment and return its id."""
@@ -33,7 +34,8 @@ class AssessmentService:
 
     def generate_assessment(self, opportunity: Opportunity, job: Job) -> Assessment:
         """Score an Opportunity's Job with AI and persist the result."""
-        agent = create_opportunity_scorer(settings.default_profile)
+        context = self.context_builder.build_default()
+        agent = create_opportunity_scorer(context)
         prompt = self._build_prompt(job)
 
         result = Runner.run_sync(agent, prompt)
