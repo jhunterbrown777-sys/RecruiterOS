@@ -7,6 +7,7 @@ from agents import Runner
 from dotenv import load_dotenv
 
 from recruiting_agents.chief_recruiter import summarize_run
+from recruiting_agents.context import RecruiterContext, RecruiterContextBuilder
 from tools.ats_report_docx import create_ats_report_docx
 from tools.docx_generator import create_docx
 from tools.excel_tracker import (
@@ -24,37 +25,37 @@ load_dotenv()
 def load_agent_from_file(
     module_path: str,
     function_name: str,
-    profile_name: str | None = None,
+    context: RecruiterContext,
 ):
     path = Path(module_path)
     spec = importlib.util.spec_from_file_location(path.stem, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    return getattr(module, function_name)(profile_name)
+    return getattr(module, function_name)(context)
 
 
-def load_recruiter_agent(profile_name: str | None = None):
+def load_recruiter_agent(context: RecruiterContext):
     return load_agent_from_file(
         "recruiting_agents/recruiter.py",
         "create_recruiter",
-        profile_name,
+        context,
     )
 
 
-def load_resume_agent(profile_name: str | None = None):
+def load_resume_agent(context: RecruiterContext):
     return load_agent_from_file(
         "recruiting_agents/resume_agent.py",
         "create_resume_agent",
-        profile_name,
+        context,
     )
 
 
-def load_ats_agent(profile_name: str | None = None):
+def load_ats_agent(context: RecruiterContext):
     return load_agent_from_file(
         "recruiting_agents/ats_agent.py",
         "create_ats_agent",
-        profile_name,
+        context,
     )
 
 
@@ -140,7 +141,7 @@ def save_outputs(job, analysis, resume_output=None, ats_review=None):
 
 
 def main():
-    profile_name = None
+    context = RecruiterContextBuilder().build_default()
 
     wb, ws = load_tracker()
     row = find_next_pending_job(ws)
@@ -151,9 +152,9 @@ def main():
 
     job = read_job(ws, row)
 
-    recruiter_agent = load_recruiter_agent(profile_name)
-resume_agent = load_resume_agent(profile_name)
-ats_agent = load_ats_agent(profile_name)
+    recruiter_agent = load_recruiter_agent(context)
+    resume_agent = load_resume_agent(context)
+    ats_agent = load_ats_agent(context)
 
     job_prompt = f"""
 Analyze this job for Hunter Brown.
