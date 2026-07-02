@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 
 from gui.controller import AppController
 from gui.dashboard import DashboardPage
+from gui.opportunity_page import OpportunityPage
 from gui.settings_page import SettingsPage
 
 
@@ -29,10 +30,12 @@ class MainWindow(QMainWindow):
 
         self.dashboard = DashboardPage(self.controller)
         self.settings_page = SettingsPage(self.controller)
+        self.opportunity_page = OpportunityPage(self.controller)
 
         self.pages = QStackedWidget()
         self.pages.addWidget(self.dashboard)
         self.pages.addWidget(self.settings_page)
+        self.pages.addWidget(self.opportunity_page)
 
         root_layout.addWidget(sidebar_widget)
         root_layout.addWidget(self.pages)
@@ -41,12 +44,17 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
 
         self.settings_button.clicked.connect(self.show_settings)
+        self.opportunities_button.clicked.connect(self.show_opportunities)
 
         self.apply_styles()
 
     def show_settings(self):
         self.settings_page.refresh()
         self.pages.setCurrentWidget(self.settings_page)
+
+    def show_opportunities(self):
+        self.opportunity_page.refresh()
+        self.pages.setCurrentWidget(self.opportunity_page)
 
     def build_sidebar(self):
         sidebar = QVBoxLayout()
@@ -63,7 +71,7 @@ class MainWindow(QMainWindow):
         buttons = [
             "Mission Control",
             "Discover",
-            "Jobs",
+            "Opportunities",
             "Companies",
             "Documents",
             "CRM",
@@ -74,6 +82,9 @@ class MainWindow(QMainWindow):
             button = QPushButton(label)
             button.setObjectName("SidebarButton")
             sidebar.addWidget(button)
+
+            if label == "Opportunities":
+                self.opportunities_button = button
 
         sidebar.addStretch()
 

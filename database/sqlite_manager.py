@@ -182,6 +182,27 @@ class SQLiteManager:
             conn.commit()
             return cursor.lastrowid if cursor.rowcount else None
 
+    def get_job(self, job_id: int) -> Job | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, title, company, location, description, url, source,
+                       work_arrangement, employment_type, salary, recruiter,
+                       date_posted, discovered_at, fit_score, status, applied,
+                       notes, company_size, industry, ats_platform, remote
+                FROM jobs
+                WHERE id = ?
+                """,
+                (job_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_job(row)
+
     def save_opportunity(self, opportunity: Opportunity) -> int | None:
         with self.connect() as conn:
             cursor = conn.cursor()

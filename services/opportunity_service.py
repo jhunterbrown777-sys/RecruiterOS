@@ -1,4 +1,5 @@
 from database.sqlite_manager import SQLiteManager
+from models.job import Job
 from models.opportunity import Opportunity
 
 
@@ -25,3 +26,12 @@ class OpportunityService:
     def list_opportunities(self, candidate_id: int) -> list[Opportunity]:
         """List all Opportunities belonging to a Candidate."""
         return self.db.get_opportunities(candidate_id)
+
+    def list_opportunities_with_jobs(self, candidate_id: int) -> list[tuple[Opportunity, Job | None]]:
+        """List a Candidate's Opportunities paired with their Job."""
+        opportunities = self.db.get_opportunities(candidate_id)
+
+        return [
+            (opportunity, self.db.get_job(opportunity.job_id))
+            for opportunity in opportunities
+        ]

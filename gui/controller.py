@@ -3,6 +3,7 @@ from database.sqlite_manager import SQLiteManager
 from models.candidate import Candidate
 from services.candidate_service import CandidateService
 from services.discovery_service import DiscoveryService
+from services.opportunity_service import OpportunityService
 
 
 class AppController:
@@ -10,6 +11,7 @@ class AppController:
         self.db = SQLiteManager()
         self.discovery_service = DiscoveryService()
         self.candidate_service = CandidateService()
+        self.opportunity_service = OpportunityService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -62,6 +64,10 @@ class AppController:
         candidate.name = name
         candidate.candidate_profile = candidate_profile
         self.candidate_service.update_candidate(candidate)
+
+    def get_opportunities(self):
+        candidate = self.get_candidate()
+        return self.opportunity_service.list_opportunities_with_jobs(candidate.id)
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
