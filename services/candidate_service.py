@@ -1,3 +1,4 @@
+from config.settings import settings
 from database.sqlite_manager import SQLiteManager
 from models.candidate import Candidate
 
@@ -33,3 +34,7 @@ class CandidateService:
 
         candidate_id = self.db.save_candidate(Candidate(name=default_name))
         return self.db.get_candidate(candidate_id)
+
+    def get_default_candidate(self) -> Candidate:
+        """Fetch (or create) the single default Candidate."""
+        return self.get_or_create_candidate(settings.default_profile)

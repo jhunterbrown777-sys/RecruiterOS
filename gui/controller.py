@@ -1,4 +1,3 @@
-from config.settings import settings
 from database.sqlite_manager import SQLiteManager
 from models.assessment import Assessment
 from models.candidate import Candidate
@@ -61,7 +60,7 @@ class AppController:
         ]
 
     def get_candidate(self) -> Candidate:
-        return self.candidate_service.get_or_create_candidate(settings.default_profile)
+        return self.candidate_service.get_default_candidate()
 
     def update_candidate(self, name: str, candidate_profile: str) -> None:
         candidate = self.get_candidate()
