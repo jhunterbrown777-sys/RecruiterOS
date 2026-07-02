@@ -88,16 +88,38 @@ class SQLiteManager:
             if row is None:
                 return None
 
-            return Candidate(
-                id=row[0],
-                name=row[1],
-                candidate_profile=row[2] or "",
-                master_resume=json.loads(row[3]) if row[3] else {},
-                preferences=json.loads(row[4]) if row[4] else {},
-                technical_skills=json.loads(row[5]) if row[5] else {},
-                created_at=datetime.fromisoformat(row[6]),
-                updated_at=datetime.fromisoformat(row[7]),
+            return self._row_to_candidate(row)
+
+    def get_first_candidate(self) -> Candidate | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, name, candidate_profile, master_resume, preferences,
+                       technical_skills, created_at, updated_at
+                FROM candidates
+                ORDER BY id ASC
+                LIMIT 1
+                """
             )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_candidate(row)
+
+    def _row_to_candidate(self, row) -> Candidate:
+        return Candidate(
+            id=row[0],
+            name=row[1],
+            candidate_profile=row[2] or "",
+            master_resume=json.loads(row[3]) if row[3] else {},
+            preferences=json.loads(row[4]) if row[4] else {},
+            technical_skills=json.loads(row[5]) if row[5] else {},
+            created_at=datetime.fromisoformat(row[6]),
+            updated_at=datetime.fromisoformat(row[7]),
+        )
 
     def update_candidate(self, candidate: Candidate) -> None:
         with self.connect() as conn:

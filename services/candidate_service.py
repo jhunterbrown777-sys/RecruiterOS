@@ -23,3 +23,13 @@ class CandidateService:
     def update_candidate(self, candidate: Candidate) -> None:
         """Persist changes to an existing Candidate."""
         self.db.update_candidate(candidate)
+
+    def get_or_create_candidate(self, default_name: str) -> Candidate:
+        """Fetch the current Candidate, creating one with default_name if none exists."""
+        candidate = self.db.get_first_candidate()
+
+        if candidate is not None:
+            return candidate
+
+        candidate_id = self.db.save_candidate(Candidate(name=default_name))
+        return self.db.get_candidate(candidate_id)

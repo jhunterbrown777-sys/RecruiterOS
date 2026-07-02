@@ -5,10 +5,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QPushButton,
+    QStackedWidget,
 )
 
 from gui.controller import AppController
 from gui.dashboard import DashboardPage
+from gui.settings_page import SettingsPage
 
 
 class MainWindow(QMainWindow):
@@ -26,14 +28,25 @@ class MainWindow(QMainWindow):
         sidebar_widget = self.build_sidebar()
 
         self.dashboard = DashboardPage(self.controller)
+        self.settings_page = SettingsPage(self.controller)
+
+        self.pages = QStackedWidget()
+        self.pages.addWidget(self.dashboard)
+        self.pages.addWidget(self.settings_page)
 
         root_layout.addWidget(sidebar_widget)
-        root_layout.addWidget(self.dashboard)
+        root_layout.addWidget(self.pages)
 
         root.setLayout(root_layout)
         self.setCentralWidget(root)
 
+        self.settings_button.clicked.connect(self.show_settings)
+
         self.apply_styles()
+
+    def show_settings(self):
+        self.settings_page.refresh()
+        self.pages.setCurrentWidget(self.settings_page)
 
     def build_sidebar(self):
         sidebar = QVBoxLayout()
@@ -64,9 +77,9 @@ class MainWindow(QMainWindow):
 
         sidebar.addStretch()
 
-        settings_button = QPushButton("Settings")
-        settings_button.setObjectName("SidebarButton")
-        sidebar.addWidget(settings_button)
+        self.settings_button = QPushButton("Settings")
+        self.settings_button.setObjectName("SidebarButton")
+        sidebar.addWidget(self.settings_button)
 
         sidebar_widget = QWidget()
         sidebar_widget.setObjectName("Sidebar")

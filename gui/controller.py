@@ -1,4 +1,7 @@
+from config.settings import settings
 from database.sqlite_manager import SQLiteManager
+from models.candidate import Candidate
+from services.candidate_service import CandidateService
 from services.discovery_service import DiscoveryService
 
 
@@ -6,6 +9,7 @@ class AppController:
     def __init__(self):
         self.db = SQLiteManager()
         self.discovery_service = DiscoveryService()
+        self.candidate_service = CandidateService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -49,6 +53,15 @@ class AppController:
             ("Resume Optimization", False),
             ("Browser Automation", False),
         ]
+
+    def get_candidate(self) -> Candidate:
+        return self.candidate_service.get_or_create_candidate(settings.default_profile)
+
+    def update_candidate(self, name: str, candidate_profile: str) -> None:
+        candidate = self.get_candidate()
+        candidate.name = name
+        candidate.candidate_profile = candidate_profile
+        self.candidate_service.update_candidate(candidate)
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
