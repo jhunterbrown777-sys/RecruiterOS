@@ -112,6 +112,12 @@ class AppController:
         resume.id = self.resume_service.create_resume(resume)
         return resume
 
+    def update_resume_content(self, resume_id: int, content: str) -> Resume:
+        resume = self.resume_service.get_resume(resume_id)
+        resume.content = content
+        self.resume_service.update_resume(resume)
+        return resume
+
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
 

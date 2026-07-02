@@ -47,6 +47,8 @@ class ResumePage(QWidget):
         root.addWidget(self.build_details_panel())
         root.addWidget(self.build_create_panel())
 
+        self._current_resume_id = None
+
         self.setLayout(root)
         self.refresh()
 
@@ -71,8 +73,15 @@ class ResumePage(QWidget):
             details_layout.addWidget(label)
 
         self.detail_content = QTextEdit()
-        self.detail_content.setReadOnly(True)
         details_layout.addWidget(self.detail_content)
+
+        self.save_content_button = QPushButton("Save Changes")
+        self.save_content_button.clicked.connect(self.save_resume_content)
+        details_layout.addWidget(self.save_content_button)
+
+        self.edit_result = QLabel("")
+        self.edit_result.setObjectName("PageSubtitle")
+        details_layout.addWidget(self.edit_result)
 
         details_panel.setLayout(details_layout)
         return details_panel
@@ -148,6 +157,7 @@ class ResumePage(QWidget):
                 break
 
     def update_details(self):
+        self.edit_result.setText("")
         selected = self.resume_list.selectedItems()
 
         if not selected:
@@ -157,17 +167,36 @@ class ResumePage(QWidget):
         resume = selected[0].data(Qt.ItemDataRole.UserRole)
         self._show_details(resume)
 
+    def save_resume_content(self):
+        if self._current_resume_id is None:
+            return
+
+        content = self.detail_content.toPlainText()
+        updated = self.controller.update_resume_content(self._current_resume_id, content)
+
+        self.refresh()
+        self._select_resume(updated.id)
+        self.edit_result.setText(f"Saved: {updated.title}")
+
     def _list_item_text(self, resume) -> str:
         return f"{resume.title} (v{resume.version})"
 
     def _show_placeholder(self, message: str = "Select a Resume to see details."):
+        self._current_resume_id = None
         self.details_placeholder.setText(message)
         self.details_placeholder.setVisible(True)
 
-        for widget in (self.detail_title, self.detail_version, self.detail_dates, self.detail_content):
+        for widget in (
+            self.detail_title,
+            self.detail_version,
+            self.detail_dates,
+            self.detail_content,
+            self.save_content_button,
+        ):
             widget.setVisible(False)
 
     def _show_details(self, resume):
+        self._current_resume_id = resume.id
         self.details_placeholder.setVisible(False)
 
         self.detail_title.setText(f"Title: {resume.title}")
@@ -176,7 +205,13 @@ class ResumePage(QWidget):
             f"Created: {resume.created_at.strftime('%Y-%m-%d %H:%M')}  |  "
             f"Updated: {resume.updated_at.strftime('%Y-%m-%d %H:%M')}"
         )
-        self.detail_content.setPlainText(resume.content or "No content yet.")
+        self.detail_content.setPlainText(resume.content or "")
 
-        for widget in (self.detail_title, self.detail_version, self.detail_dates, self.detail_content):
+        for widget in (
+            self.detail_title,
+            self.detail_version,
+            self.detail_dates,
+            self.detail_content,
+            self.save_content_button,
+        ):
             widget.setVisible(True)
