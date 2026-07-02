@@ -72,6 +72,25 @@ CREATE TABLE IF NOT EXISTS opportunities (
 """
 
 
+CREATE_ASSESSMENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS assessments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    opportunity_id INTEGER NOT NULL,
+    score INTEGER,
+    fit_score INTEGER,
+    posting_age_score INTEGER,
+    company_score INTEGER,
+    remote_score INTEGER,
+    salary_score INTEGER,
+    ats_score INTEGER,
+    recommendation TEXT,
+    reasoning TEXT,
+    created_at TEXT,
+    FOREIGN KEY(opportunity_id) REFERENCES opportunities(id)
+);
+"""
+
+
 CREATE_APPLICATIONS_TABLE = """
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -6,6 +6,7 @@ from pathlib import Path
 from database.schema import (
     CREATE_ACTIVITIES_TABLE,
     CREATE_APPLICATIONS_TABLE,
+    CREATE_ASSESSMENTS_TABLE,
     CREATE_CANDIDATES_TABLE,
     CREATE_COMPANIES_TABLE,
     CREATE_DOCUMENTS_TABLE,
@@ -14,6 +15,7 @@ from database.schema import (
     CREATE_OPPORTUNITIES_TABLE,
     CREATE_RECRUITERS_TABLE,
 )
+from models.assessment import Assessment
 from models.candidate import Candidate
 from models.job import Job
 from models.opportunity import Opportunity
@@ -37,6 +39,7 @@ class SQLiteManager:
             cursor.execute(CREATE_COMPANIES_TABLE)
             cursor.execute(CREATE_JOBS_TABLE)
             cursor.execute(CREATE_OPPORTUNITIES_TABLE)
+            cursor.execute(CREATE_ASSESSMENTS_TABLE)
             cursor.execute(CREATE_APPLICATIONS_TABLE)
             cursor.execute(CREATE_RECRUITERS_TABLE)
             cursor.execute(CREATE_INTERVIEWS_TABLE)
@@ -220,6 +223,89 @@ class SQLiteManager:
             status=row[3],
             created_at=datetime.fromisoformat(row[4]),
             updated_at=datetime.fromisoformat(row[5]),
+        )
+
+    def save_assessment(self, assessment: Assessment) -> int:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO assessments (
+                    opportunity_id, score, fit_score, posting_age_score,
+                    company_score, remote_score, salary_score, ats_score,
+                    recommendation, reasoning, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    assessment.opportunity_id,
+                    assessment.score,
+                    assessment.fit_score,
+                    assessment.posting_age_score,
+                    assessment.company_score,
+                    assessment.remote_score,
+                    assessment.salary_score,
+                    assessment.ats_score,
+                    assessment.recommendation,
+                    assessment.reasoning,
+                    assessment.created_at.isoformat(),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_assessment(self, assessment_id: int) -> Assessment | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, opportunity_id, score, fit_score, posting_age_score,
+                       company_score, remote_score, salary_score, ats_score,
+                       recommendation, reasoning, created_at
+                FROM assessments
+                WHERE id = ?
+                """,
+                (assessment_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_assessment(row)
+
+    def get_assessments(self, opportunity_id: int) -> list[Assessment]:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, opportunity_id, score, fit_score, posting_age_score,
+                       company_score, remote_score, salary_score, ats_score,
+                       recommendation, reasoning, created_at
+                FROM assessments
+                WHERE opportunity_id = ?
+                ORDER BY created_at DESC
+                """,
+                (opportunity_id,),
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_assessment(row) for row in rows]
+
+    def _row_to_assessment(self, row) -> Assessment:
+        return Assessment(
+            id=row[0],
+            opportunity_id=row[1],
+            score=row[2],
+            fit_score=row[3],
+            posting_age_score=row[4],
+            company_score=row[5],
+            remote_score=row[6],
+            salary_score=row[7],
+            ats_score=row[8],
+            recommendation=row[9],
+            reasoning=row[10],
+            created_at=datetime.fromisoformat(row[11]),
         )
 
     def save_recruiter(self, recruiter: Recruiter) -> int:
