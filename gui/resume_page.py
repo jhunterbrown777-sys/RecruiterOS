@@ -40,8 +40,12 @@ class ResumePage(QWidget):
         self.resume_list = QListWidget()
         self.resume_list.itemSelectionChanged.connect(self.update_details)
 
+        self.resume_list_empty_state = QLabel("No resumes yet. Create one below or generate one from an Opportunity.")
+        self.resume_list_empty_state.setObjectName("PageSubtitle")
+
         panel_layout.addWidget(panel_title)
         panel_layout.addWidget(self.resume_list)
+        panel_layout.addWidget(self.resume_list_empty_state)
 
         panel.setLayout(panel_layout)
         root.addWidget(panel)
@@ -109,6 +113,10 @@ class ResumePage(QWidget):
         self.generate_button.clicked.connect(self.generate_resume)
         generate_layout.addWidget(self.generate_button)
 
+        self.generate_empty_state = QLabel("No Opportunities with a resolvable Job are available yet.")
+        self.generate_empty_state.setObjectName("PageSubtitle")
+        generate_layout.addWidget(self.generate_empty_state)
+
         self.generate_result = QLabel("")
         self.generate_result.setObjectName("PageSubtitle")
         generate_layout.addWidget(self.generate_result)
@@ -129,6 +137,7 @@ class ResumePage(QWidget):
         create_layout.addWidget(title_label)
 
         self.new_title_input = QLineEdit()
+        self.new_title_input.textChanged.connect(self._update_create_button_state)
         create_layout.addWidget(self.new_title_input)
 
         content_label = QLabel("Content")
@@ -137,9 +146,10 @@ class ResumePage(QWidget):
         self.new_content_input = QTextEdit()
         create_layout.addWidget(self.new_content_input)
 
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(self.create_resume)
-        create_layout.addWidget(save_button)
+        self.create_save_button = QPushButton("Save")
+        self.create_save_button.setEnabled(False)
+        self.create_save_button.clicked.connect(self.create_resume)
+        create_layout.addWidget(self.create_save_button)
 
         self.create_result = QLabel("")
         self.create_result.setObjectName("PageSubtitle")
@@ -158,6 +168,8 @@ class ResumePage(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, resume)
             self.resume_list.addItem(item)
 
+        self.resume_list_empty_state.setVisible(self.resume_list.count() == 0)
+
         self._refresh_opportunity_combo()
         self.update_details()
 
@@ -170,7 +182,13 @@ class ResumePage(QWidget):
 
             self.opportunity_combo.addItem(f"{job.title} — {job.company}", opportunity.id)
 
-        self.generate_button.setEnabled(self.opportunity_combo.count() > 0)
+        has_opportunities = self.opportunity_combo.count() > 0
+        self.opportunity_combo.setVisible(has_opportunities)
+        self.generate_button.setEnabled(has_opportunities)
+        self.generate_empty_state.setVisible(not has_opportunities)
+
+    def _update_create_button_state(self):
+        self.create_save_button.setEnabled(bool(self.new_title_input.text().strip()))
 
     def generate_resume(self):
         opportunity_id = self.opportunity_combo.currentData()
@@ -224,7 +242,10 @@ class ResumePage(QWidget):
         selected = self.resume_list.selectedItems()
 
         if not selected:
-            self._show_placeholder()
+            if self.resume_list.count() == 0:
+                self._show_placeholder("No resumes to select yet.")
+            else:
+                self._show_placeholder()
             return
 
         resume = selected[0].data(Qt.ItemDataRole.UserRole)
