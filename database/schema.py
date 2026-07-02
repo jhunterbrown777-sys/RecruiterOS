@@ -1,3 +1,17 @@
+CREATE_CANDIDATES_TABLE = """
+CREATE TABLE IF NOT EXISTS candidates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    candidate_profile TEXT,
+    master_resume TEXT,
+    preferences TEXT,
+    technical_skills TEXT,
+    created_at TEXT,
+    updated_at TEXT
+);
+"""
+
+
 CREATE_COMPANIES_TABLE = """
 CREATE TABLE IF NOT EXISTS companies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

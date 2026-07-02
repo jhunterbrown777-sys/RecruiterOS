@@ -1,15 +1,19 @@
+import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 from database.schema import (
     CREATE_ACTIVITIES_TABLE,
     CREATE_APPLICATIONS_TABLE,
+    CREATE_CANDIDATES_TABLE,
     CREATE_COMPANIES_TABLE,
     CREATE_DOCUMENTS_TABLE,
     CREATE_INTERVIEWS_TABLE,
     CREATE_JOBS_TABLE,
     CREATE_RECRUITERS_TABLE,
 )
+from models.candidate import Candidate
 from models.job import Job
 from models.recruiter import Recruiter
 from models.interview import Interview
@@ -27,6 +31,7 @@ class SQLiteManager:
     def initialize_database(self):
         with self.connect() as conn:
             cursor = conn.cursor()
+            cursor.execute(CREATE_CANDIDATES_TABLE)
             cursor.execute(CREATE_COMPANIES_TABLE)
             cursor.execute(CREATE_JOBS_TABLE)
             cursor.execute(CREATE_APPLICATIONS_TABLE)
@@ -34,6 +39,80 @@ class SQLiteManager:
             cursor.execute(CREATE_INTERVIEWS_TABLE)
             cursor.execute(CREATE_ACTIVITIES_TABLE)
             cursor.execute(CREATE_DOCUMENTS_TABLE)
+            conn.commit()
+
+    def save_candidate(self, candidate: Candidate) -> int:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO candidates (
+                    name, candidate_profile, master_resume, preferences,
+                    technical_skills, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    candidate.name,
+                    candidate.candidate_profile,
+                    json.dumps(candidate.master_resume),
+                    json.dumps(candidate.preferences),
+                    json.dumps(candidate.technical_skills),
+                    candidate.created_at.isoformat(),
+                    candidate.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_candidate(self, candidate_id: int) -> Candidate | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, name, candidate_profile, master_resume, preferences,
+                       technical_skills, created_at, updated_at
+                FROM candidates
+                WHERE id = ?
+                """,
+                (candidate_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return Candidate(
+                id=row[0],
+                name=row[1],
+                candidate_profile=row[2] or "",
+                master_resume=json.loads(row[3]) if row[3] else {},
+                preferences=json.loads(row[4]) if row[4] else {},
+                technical_skills=json.loads(row[5]) if row[5] else {},
+                created_at=datetime.fromisoformat(row[6]),
+                updated_at=datetime.fromisoformat(row[7]),
+            )
+
+    def update_candidate(self, candidate: Candidate) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE candidates
+                SET name = ?, candidate_profile = ?, master_resume = ?,
+                    preferences = ?, technical_skills = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    candidate.name,
+                    candidate.candidate_profile,
+                    json.dumps(candidate.master_resume),
+                    json.dumps(candidate.preferences),
+                    json.dumps(candidate.technical_skills),
+                    datetime.utcnow().isoformat(),
+                    candidate.id,
+                ),
+            )
             conn.commit()
 
     def save_job(self, job: Job) -> int | None:
