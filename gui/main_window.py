@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QStackedWidget,
 )
 
+from gui.application_page import ApplicationPage
 from gui.controller import AppController
 from gui.cover_letter_page import CoverLetterPage
 from gui.dashboard import DashboardPage
@@ -37,6 +38,7 @@ class MainWindow(QMainWindow):
         self.resume_page = ResumePage(self.controller)
         self.cover_letter_page = CoverLetterPage(self.controller)
         self.document_page = DocumentPage(self.controller)
+        self.application_page = ApplicationPage(self.controller)
 
         self.pages = QStackedWidget()
         self.pages.addWidget(self.dashboard)
@@ -45,6 +47,7 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.resume_page)
         self.pages.addWidget(self.cover_letter_page)
         self.pages.addWidget(self.document_page)
+        self.pages.addWidget(self.application_page)
 
         root_layout.addWidget(sidebar_widget)
         root_layout.addWidget(self.pages)
@@ -57,6 +60,7 @@ class MainWindow(QMainWindow):
         self.resume_button.clicked.connect(self.show_resume)
         self.cover_letters_button.clicked.connect(self.show_cover_letters)
         self.documents_button.clicked.connect(self.show_documents)
+        self.applications_button.clicked.connect(self.show_applications)
 
         self.document_page.open_resume_requested.connect(self.show_resume_and_select)
         self.document_page.open_cover_letter_requested.connect(self.show_cover_letter_and_select)
@@ -88,6 +92,10 @@ class MainWindow(QMainWindow):
     def show_documents(self):
         self.document_page.refresh()
         self.pages.setCurrentWidget(self.document_page)
+
+    def show_applications(self):
+        self.application_page.refresh()
+        self.pages.setCurrentWidget(self.application_page)
 
     def show_resume_and_select(self, resume_id: int):
         self.show_resume()
@@ -125,6 +133,7 @@ class MainWindow(QMainWindow):
             "Cover Letters",
             "Companies",
             "Documents",
+            "Applications",
             "CRM",
             "Analytics",
         ]
@@ -142,6 +151,8 @@ class MainWindow(QMainWindow):
                 self.cover_letters_button = button
             elif label == "Documents":
                 self.documents_button = button
+            elif label == "Applications":
+                self.applications_button = button
 
         sidebar.addStretch()
 
