@@ -106,6 +106,12 @@ class AppController:
     def get_resume(self, resume_id: int) -> Resume | None:
         return self.resume_service.get_resume(resume_id)
 
+    def create_resume(self, title: str, content: str) -> Resume:
+        candidate = self.get_candidate()
+        resume = Resume(candidate_id=candidate.id, title=title, content=content)
+        resume.id = self.resume_service.create_resume(resume)
+        return resume
+
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
 

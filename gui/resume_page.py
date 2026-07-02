@@ -3,8 +3,10 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QPushButton,
     QTextEdit,
     QFrame,
 )
@@ -43,6 +45,7 @@ class ResumePage(QWidget):
         root.addWidget(panel)
 
         root.addWidget(self.build_details_panel())
+        root.addWidget(self.build_create_panel())
 
         self.setLayout(root)
         self.refresh()
@@ -74,7 +77,40 @@ class ResumePage(QWidget):
         details_panel.setLayout(details_layout)
         return details_panel
 
+    def build_create_panel(self) -> QFrame:
+        create_panel = QFrame()
+        create_panel.setObjectName("Panel")
+        create_layout = QVBoxLayout()
+
+        create_title = QLabel("Create Resume")
+        create_title.setObjectName("SectionTitle")
+        create_layout.addWidget(create_title)
+
+        title_label = QLabel("Title")
+        create_layout.addWidget(title_label)
+
+        self.new_title_input = QLineEdit()
+        create_layout.addWidget(self.new_title_input)
+
+        content_label = QLabel("Content")
+        create_layout.addWidget(content_label)
+
+        self.new_content_input = QTextEdit()
+        create_layout.addWidget(self.new_content_input)
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self.create_resume)
+        create_layout.addWidget(save_button)
+
+        self.create_result = QLabel("")
+        self.create_result.setObjectName("PageSubtitle")
+        create_layout.addWidget(self.create_result)
+
+        create_panel.setLayout(create_layout)
+        return create_panel
+
     def refresh(self):
+        self.create_result.setText("")
         self.resume_list.clear()
 
         for resume in self.controller.get_resumes():
@@ -83,6 +119,33 @@ class ResumePage(QWidget):
             self.resume_list.addItem(item)
 
         self.update_details()
+
+    def create_resume(self):
+        title = self.new_title_input.text().strip()
+
+        if not title:
+            self.create_result.setText("Title is required.")
+            return
+
+        content = self.new_content_input.toPlainText()
+        resume = self.controller.create_resume(title, content)
+
+        self.new_title_input.clear()
+        self.new_content_input.clear()
+
+        self.refresh()
+        self._select_resume(resume.id)
+        self.create_result.setText(f"Created: {resume.title}")
+
+    def _select_resume(self, resume_id: int):
+        for index in range(self.resume_list.count()):
+            item = self.resume_list.item(index)
+            resume = item.data(Qt.ItemDataRole.UserRole)
+
+            if resume.id == resume_id:
+                item.setSelected(True)
+                self.resume_list.setCurrentItem(item)
+                break
 
     def update_details(self):
         selected = self.resume_list.selectedItems()
