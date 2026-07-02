@@ -1,11 +1,13 @@
 from database.sqlite_manager import SQLiteManager
 from models.assessment import Assessment
 from models.candidate import Candidate
+from models.cover_letter import CoverLetter
 from models.document import Document
 from models.opportunity import Opportunity
 from models.resume import Resume
 from services.assessment_service import AssessmentService
 from services.candidate_service import CandidateService
+from services.cover_letter_service import CoverLetterService
 from services.discovery_service import DiscoveryService
 from services.document_service import DocumentService
 from services.opportunity_service import OpportunityService
@@ -21,6 +23,7 @@ class AppController:
         self.assessment_service = AssessmentService()
         self.resume_service = ResumeService()
         self.document_service = DocumentService()
+        self.cover_letter_service = CoverLetterService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -142,6 +145,47 @@ class AppController:
         )
         new_resume.id = self.resume_service.create_resume(new_resume)
         return new_resume
+
+    def get_cover_letters(self):
+        candidate = self.get_candidate()
+        return self.cover_letter_service.list_cover_letters(candidate.id)
+
+    def get_cover_letter(self, cover_letter_id: int) -> CoverLetter | None:
+        return self.cover_letter_service.get_cover_letter(cover_letter_id)
+
+    def create_cover_letter(self, title: str, content: str) -> CoverLetter:
+        candidate = self.get_candidate()
+        cover_letter = CoverLetter(candidate_id=candidate.id, title=title, content=content)
+        cover_letter.id = self.cover_letter_service.create_cover_letter(cover_letter)
+        return cover_letter
+
+    def update_cover_letter_content(self, cover_letter_id: int, content: str) -> CoverLetter:
+        cover_letter = self.cover_letter_service.get_cover_letter(cover_letter_id)
+        cover_letter.content = content
+        self.cover_letter_service.update_cover_letter(cover_letter)
+        return cover_letter
+
+    def generate_cover_letter_for_opportunity(self, opportunity_id: int) -> CoverLetter:
+        opportunity = self.opportunity_service.get_opportunity(opportunity_id)
+        job = self.db.get_job(opportunity.job_id)
+
+        if job is None:
+            raise RuntimeError("Cannot generate cover letter: Job details unavailable for this Opportunity.")
+
+        assessment = self.get_latest_assessment(opportunity_id)
+
+        return self.cover_letter_service.generate_tailored_cover_letter(job, assessment)
+
+    def duplicate_cover_letter(self, cover_letter_id: int) -> CoverLetter:
+        original = self.cover_letter_service.get_cover_letter(cover_letter_id)
+        new_cover_letter = CoverLetter(
+            candidate_id=original.candidate_id,
+            title=original.title,
+            content=original.content,
+            version=original.version + 1,
+        )
+        new_cover_letter.id = self.cover_letter_service.create_cover_letter(new_cover_letter)
+        return new_cover_letter
 
     def get_documents(self):
         candidate = self.get_candidate()
