@@ -57,6 +57,21 @@ CREATE TABLE IF NOT EXISTS jobs (
 """
 
 
+CREATE_OPPORTUNITIES_TABLE = """
+CREATE TABLE IF NOT EXISTS opportunities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_id INTEGER NOT NULL,
+    job_id INTEGER NOT NULL,
+    status TEXT,
+    created_at TEXT,
+    updated_at TEXT,
+    FOREIGN KEY(candidate_id) REFERENCES candidates(id),
+    FOREIGN KEY(job_id) REFERENCES jobs(id),
+    UNIQUE(candidate_id, job_id)
+);
+"""
+
+
 CREATE_APPLICATIONS_TABLE = """
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

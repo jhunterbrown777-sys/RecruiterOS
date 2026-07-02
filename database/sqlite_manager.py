@@ -11,10 +11,12 @@ from database.schema import (
     CREATE_DOCUMENTS_TABLE,
     CREATE_INTERVIEWS_TABLE,
     CREATE_JOBS_TABLE,
+    CREATE_OPPORTUNITIES_TABLE,
     CREATE_RECRUITERS_TABLE,
 )
 from models.candidate import Candidate
 from models.job import Job
+from models.opportunity import Opportunity
 from models.recruiter import Recruiter
 from models.interview import Interview
 
@@ -34,6 +36,7 @@ class SQLiteManager:
             cursor.execute(CREATE_CANDIDATES_TABLE)
             cursor.execute(CREATE_COMPANIES_TABLE)
             cursor.execute(CREATE_JOBS_TABLE)
+            cursor.execute(CREATE_OPPORTUNITIES_TABLE)
             cursor.execute(CREATE_APPLICATIONS_TABLE)
             cursor.execute(CREATE_RECRUITERS_TABLE)
             cursor.execute(CREATE_INTERVIEWS_TABLE)
@@ -153,6 +156,71 @@ class SQLiteManager:
             )
             conn.commit()
             return cursor.lastrowid if cursor.rowcount else None
+
+    def save_opportunity(self, opportunity: Opportunity) -> int | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO opportunities (
+                    candidate_id, job_id, status, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    opportunity.candidate_id,
+                    opportunity.job_id,
+                    opportunity.status,
+                    opportunity.created_at.isoformat(),
+                    opportunity.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid if cursor.rowcount else None
+
+    def get_opportunity(self, opportunity_id: int) -> Opportunity | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, job_id, status, created_at, updated_at
+                FROM opportunities
+                WHERE id = ?
+                """,
+                (opportunity_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_opportunity(row)
+
+    def get_opportunities(self, candidate_id: int) -> list[Opportunity]:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, job_id, status, created_at, updated_at
+                FROM opportunities
+                WHERE candidate_id = ?
+                ORDER BY updated_at DESC
+                """,
+                (candidate_id,),
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_opportunity(row) for row in rows]
+
+    def _row_to_opportunity(self, row) -> Opportunity:
+        return Opportunity(
+            id=row[0],
+            candidate_id=row[1],
+            job_id=row[2],
+            status=row[3],
+            created_at=datetime.fromisoformat(row[4]),
+            updated_at=datetime.fromisoformat(row[5]),
+        )
 
     def save_recruiter(self, recruiter: Recruiter) -> int:
         with self.connect() as conn:
