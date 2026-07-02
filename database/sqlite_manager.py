@@ -9,6 +9,7 @@ from database.schema import (
     CREATE_ASSESSMENTS_TABLE,
     CREATE_CANDIDATES_TABLE,
     CREATE_COMPANIES_TABLE,
+    CREATE_COVER_LETTERS_TABLE,
     CREATE_DOCUMENTS_TABLE,
     CREATE_INTERVIEWS_TABLE,
     CREATE_JOBS_TABLE,
@@ -18,6 +19,8 @@ from database.schema import (
 )
 from models.assessment import Assessment
 from models.candidate import Candidate
+from models.cover_letter import CoverLetter
+from models.document import Document
 from models.job import Job
 from models.opportunity import Opportunity
 from models.recruiter import Recruiter
@@ -48,6 +51,7 @@ class SQLiteManager:
             cursor.execute(CREATE_INTERVIEWS_TABLE)
             cursor.execute(CREATE_ACTIVITIES_TABLE)
             cursor.execute(CREATE_DOCUMENTS_TABLE)
+            cursor.execute(CREATE_COVER_LETTERS_TABLE)
             conn.commit()
 
     def save_candidate(self, candidate: Candidate) -> int:
@@ -530,18 +534,186 @@ class SQLiteManager:
             conn.commit()
             return cursor.lastrowid
 
-    def save_document(self, job_id: int, document_type: str, file_path: str) -> int:
+    def save_document(self, document: Document) -> int:
         with self.connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO documents (job_id, document_type, file_path, created_at)
-                VALUES (?, ?, ?, datetime('now'))
+                INSERT INTO documents (
+                    candidate_id, title, document_type, content, version, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (job_id, document_type, file_path),
+                (
+                    document.candidate_id,
+                    document.title,
+                    document.document_type,
+                    document.content,
+                    document.version,
+                    document.created_at.isoformat(),
+                    document.updated_at.isoformat(),
+                ),
             )
             conn.commit()
             return cursor.lastrowid
+
+    def get_document(self, document_id: int) -> Document | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, title, document_type, content, version, created_at, updated_at
+                FROM documents
+                WHERE id = ?
+                """,
+                (document_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_document(row)
+
+    def get_documents(self, candidate_id: int) -> list[Document]:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, title, document_type, content, version, created_at, updated_at
+                FROM documents
+                WHERE candidate_id = ?
+                ORDER BY updated_at DESC
+                """,
+                (candidate_id,),
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_document(row) for row in rows]
+
+    def _row_to_document(self, row) -> Document:
+        return Document(
+            id=row[0],
+            candidate_id=row[1],
+            title=row[2],
+            document_type=row[3] or "Other",
+            content=row[4] or "",
+            version=row[5],
+            created_at=datetime.fromisoformat(row[6]),
+            updated_at=datetime.fromisoformat(row[7]),
+        )
+
+    def update_document(self, document: Document) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE documents
+                SET title = ?, document_type = ?, content = ?, version = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    document.title,
+                    document.document_type,
+                    document.content,
+                    document.version,
+                    datetime.utcnow().isoformat(),
+                    document.id,
+                ),
+            )
+            conn.commit()
+
+    def delete_document(self, document_id: int) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM documents WHERE id = ?", (document_id,))
+            conn.commit()
+
+    def save_cover_letter(self, cover_letter: CoverLetter) -> int:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO cover_letters (
+                    candidate_id, title, content, version, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    cover_letter.candidate_id,
+                    cover_letter.title,
+                    cover_letter.content,
+                    cover_letter.version,
+                    cover_letter.created_at.isoformat(),
+                    cover_letter.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_cover_letter(self, cover_letter_id: int) -> CoverLetter | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, title, content, version, created_at, updated_at
+                FROM cover_letters
+                WHERE id = ?
+                """,
+                (cover_letter_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_cover_letter(row)
+
+    def get_cover_letters(self, candidate_id: int) -> list[CoverLetter]:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, title, content, version, created_at, updated_at
+                FROM cover_letters
+                WHERE candidate_id = ?
+                ORDER BY updated_at DESC
+                """,
+                (candidate_id,),
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_cover_letter(row) for row in rows]
+
+    def _row_to_cover_letter(self, row) -> CoverLetter:
+        return CoverLetter(
+            id=row[0],
+            candidate_id=row[1],
+            title=row[2],
+            content=row[3] or "",
+            version=row[4],
+            created_at=datetime.fromisoformat(row[5]),
+            updated_at=datetime.fromisoformat(row[6]),
+        )
+
+    def update_cover_letter(self, cover_letter: CoverLetter) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE cover_letters
+                SET title = ?, content = ?, version = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    cover_letter.title,
+                    cover_letter.content,
+                    cover_letter.version,
+                    datetime.utcnow().isoformat(),
+                    cover_letter.id,
+                ),
+            )
+            conn.commit()
 
     def get_all_jobs(self) -> list[Job]:
         with self.connect() as conn:

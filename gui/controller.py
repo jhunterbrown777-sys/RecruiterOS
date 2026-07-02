@@ -1,11 +1,13 @@
 from database.sqlite_manager import SQLiteManager
 from models.assessment import Assessment
 from models.candidate import Candidate
+from models.document import Document
 from models.opportunity import Opportunity
 from models.resume import Resume
 from services.assessment_service import AssessmentService
 from services.candidate_service import CandidateService
 from services.discovery_service import DiscoveryService
+from services.document_service import DocumentService
 from services.opportunity_service import OpportunityService
 from services.resume_service import ResumeService
 
@@ -18,6 +20,7 @@ class AppController:
         self.opportunity_service = OpportunityService()
         self.assessment_service = AssessmentService()
         self.resume_service = ResumeService()
+        self.document_service = DocumentService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -139,6 +142,42 @@ class AppController:
         )
         new_resume.id = self.resume_service.create_resume(new_resume)
         return new_resume
+
+    def get_documents(self):
+        candidate = self.get_candidate()
+        return self.document_service.list_documents(candidate.id)
+
+    def get_document(self, document_id: int) -> Document | None:
+        return self.document_service.get_document(document_id)
+
+    def create_document(self, title: str, document_type: str, content: str) -> Document:
+        candidate = self.get_candidate()
+        document = Document(candidate_id=candidate.id, title=title, document_type=document_type, content=content)
+        document.id = self.document_service.create_document(document)
+        return document
+
+    def update_document_content(self, document_id: int, title: str, document_type: str, content: str) -> Document:
+        document = self.document_service.get_document(document_id)
+        document.title = title
+        document.document_type = document_type
+        document.content = content
+        self.document_service.update_document(document)
+        return document
+
+    def delete_document(self, document_id: int) -> None:
+        self.document_service.delete_document(document_id)
+
+    def duplicate_document(self, document_id: int) -> Document:
+        original = self.document_service.get_document(document_id)
+        new_document = Document(
+            candidate_id=original.candidate_id,
+            title=original.title,
+            document_type=original.document_type,
+            content=original.content,
+            version=original.version + 1,
+        )
+        new_document.id = self.document_service.create_document(new_document)
+        return new_document
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()

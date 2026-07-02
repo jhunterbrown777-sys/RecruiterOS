@@ -181,10 +181,27 @@ CREATE TABLE IF NOT EXISTS activities (
 CREATE_DOCUMENTS_TABLE = """
 CREATE TABLE IF NOT EXISTS documents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER,
-    document_type TEXT,
-    file_path TEXT,
+    candidate_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    document_type TEXT NOT NULL DEFAULT 'Other',
+    content TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
     created_at TEXT,
-    FOREIGN KEY(job_id) REFERENCES jobs(id)
+    updated_at TEXT,
+    FOREIGN KEY(candidate_id) REFERENCES candidates(id)
+);
+"""
+
+
+CREATE_COVER_LETTERS_TABLE = """
+CREATE TABLE IF NOT EXISTS cover_letters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT,
+    updated_at TEXT,
+    FOREIGN KEY(candidate_id) REFERENCES candidates(id)
 );
 """
