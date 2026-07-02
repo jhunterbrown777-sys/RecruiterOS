@@ -118,6 +118,17 @@ class AppController:
         self.resume_service.update_resume(resume)
         return resume
 
+    def generate_resume_for_opportunity(self, opportunity_id: int) -> Resume:
+        opportunity = self.opportunity_service.get_opportunity(opportunity_id)
+        job = self.db.get_job(opportunity.job_id)
+
+        if job is None:
+            raise RuntimeError("Cannot generate resume: Job details unavailable for this Opportunity.")
+
+        assessment = self.get_latest_assessment(opportunity_id)
+
+        return self.resume_service.generate_tailored_resume(job, assessment)
+
     def duplicate_resume(self, resume_id: int) -> Resume:
         original = self.resume_service.get_resume(resume_id)
         new_resume = Resume(

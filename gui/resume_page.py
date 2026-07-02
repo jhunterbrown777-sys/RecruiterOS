@@ -1,8 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QApplication,
     QWidget,
     QVBoxLayout,
     QLabel,
+    QComboBox,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -45,6 +47,7 @@ class ResumePage(QWidget):
         root.addWidget(panel)
 
         root.addWidget(self.build_details_panel())
+        root.addWidget(self.build_generate_panel())
         root.addWidget(self.build_create_panel())
 
         self._current_resume_id = None
@@ -90,6 +93,29 @@ class ResumePage(QWidget):
         details_panel.setLayout(details_layout)
         return details_panel
 
+    def build_generate_panel(self) -> QFrame:
+        generate_panel = QFrame()
+        generate_panel.setObjectName("Panel")
+        generate_layout = QVBoxLayout()
+
+        generate_title = QLabel("Generate Tailored Resume")
+        generate_title.setObjectName("SectionTitle")
+        generate_layout.addWidget(generate_title)
+
+        self.opportunity_combo = QComboBox()
+        generate_layout.addWidget(self.opportunity_combo)
+
+        self.generate_button = QPushButton("Generate")
+        self.generate_button.clicked.connect(self.generate_resume)
+        generate_layout.addWidget(self.generate_button)
+
+        self.generate_result = QLabel("")
+        self.generate_result.setObjectName("PageSubtitle")
+        generate_layout.addWidget(self.generate_result)
+
+        generate_panel.setLayout(generate_layout)
+        return generate_panel
+
     def build_create_panel(self) -> QFrame:
         create_panel = QFrame()
         create_panel.setObjectName("Panel")
@@ -124,6 +150,7 @@ class ResumePage(QWidget):
 
     def refresh(self):
         self.create_result.setText("")
+        self.generate_result.setText("")
         self.resume_list.clear()
 
         for resume in self.controller.get_resumes():
@@ -131,7 +158,39 @@ class ResumePage(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, resume)
             self.resume_list.addItem(item)
 
+        self._refresh_opportunity_combo()
         self.update_details()
+
+    def _refresh_opportunity_combo(self):
+        self.opportunity_combo.clear()
+
+        for opportunity, job in self.controller.get_opportunities():
+            if job is None:
+                continue
+
+            self.opportunity_combo.addItem(f"{job.title} — {job.company}", opportunity.id)
+
+        self.generate_button.setEnabled(self.opportunity_combo.count() > 0)
+
+    def generate_resume(self):
+        opportunity_id = self.opportunity_combo.currentData()
+
+        if opportunity_id is None:
+            return
+
+        self.generate_button.setEnabled(False)
+        self.generate_result.setText("Generating…")
+        QApplication.processEvents()
+
+        try:
+            resume = self.controller.generate_resume_for_opportunity(opportunity_id)
+            self.refresh()
+            self._select_resume(resume.id)
+            self.generate_result.setText(f"Generated: {resume.title}")
+        except Exception as error:
+            self.generate_result.setText(f"Generation failed: {error}")
+        finally:
+            self.generate_button.setEnabled(self.opportunity_combo.count() > 0)
 
     def create_resume(self):
         title = self.new_title_input.text().strip()
