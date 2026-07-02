@@ -43,3 +43,5 @@ class Job:
     ats_platform: str = ""
 
     remote: bool = False
+
+    id: Optional[int] = None
