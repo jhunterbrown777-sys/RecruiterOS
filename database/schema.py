@@ -12,6 +12,20 @@ CREATE TABLE IF NOT EXISTS candidates (
 """
 
 
+CREATE_RESUMES_TABLE = """
+CREATE TABLE IF NOT EXISTS resumes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT,
+    updated_at TEXT,
+    FOREIGN KEY(candidate_id) REFERENCES candidates(id)
+);
+"""
+
+
 CREATE_COMPANIES_TABLE = """
 CREATE TABLE IF NOT EXISTS companies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -14,6 +14,7 @@ from database.schema import (
     CREATE_JOBS_TABLE,
     CREATE_OPPORTUNITIES_TABLE,
     CREATE_RECRUITERS_TABLE,
+    CREATE_RESUMES_TABLE,
 )
 from models.assessment import Assessment
 from models.candidate import Candidate
@@ -21,6 +22,7 @@ from models.job import Job
 from models.opportunity import Opportunity
 from models.recruiter import Recruiter
 from models.interview import Interview
+from models.resume import Resume
 
 
 class SQLiteManager:
@@ -36,6 +38,7 @@ class SQLiteManager:
         with self.connect() as conn:
             cursor = conn.cursor()
             cursor.execute(CREATE_CANDIDATES_TABLE)
+            cursor.execute(CREATE_RESUMES_TABLE)
             cursor.execute(CREATE_COMPANIES_TABLE)
             cursor.execute(CREATE_JOBS_TABLE)
             cursor.execute(CREATE_OPPORTUNITIES_TABLE)
@@ -139,6 +142,92 @@ class SQLiteManager:
                     json.dumps(candidate.technical_skills),
                     datetime.utcnow().isoformat(),
                     candidate.id,
+                ),
+            )
+            conn.commit()
+
+    def save_resume(self, resume: Resume) -> int:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO resumes (
+                    candidate_id, title, content, version, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    resume.candidate_id,
+                    resume.title,
+                    resume.content,
+                    resume.version,
+                    resume.created_at.isoformat(),
+                    resume.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_resume(self, resume_id: int) -> Resume | None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, title, content, version, created_at, updated_at
+                FROM resumes
+                WHERE id = ?
+                """,
+                (resume_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_resume(row)
+
+    def get_resumes(self, candidate_id: int) -> list[Resume]:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, candidate_id, title, content, version, created_at, updated_at
+                FROM resumes
+                WHERE candidate_id = ?
+                ORDER BY updated_at DESC
+                """,
+                (candidate_id,),
+            )
+            rows = cursor.fetchall()
+
+            return [self._row_to_resume(row) for row in rows]
+
+    def _row_to_resume(self, row) -> Resume:
+        return Resume(
+            id=row[0],
+            candidate_id=row[1],
+            title=row[2],
+            content=row[3] or "",
+            version=row[4],
+            created_at=datetime.fromisoformat(row[5]),
+            updated_at=datetime.fromisoformat(row[6]),
+        )
+
+    def update_resume(self, resume: Resume) -> None:
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE resumes
+                SET title = ?, content = ?, version = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    resume.title,
+                    resume.content,
+                    resume.version,
+                    datetime.utcnow().isoformat(),
+                    resume.id,
                 ),
             )
             conn.commit()

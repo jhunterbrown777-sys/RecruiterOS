@@ -2,10 +2,12 @@ from database.sqlite_manager import SQLiteManager
 from models.assessment import Assessment
 from models.candidate import Candidate
 from models.opportunity import Opportunity
+from models.resume import Resume
 from services.assessment_service import AssessmentService
 from services.candidate_service import CandidateService
 from services.discovery_service import DiscoveryService
 from services.opportunity_service import OpportunityService
+from services.resume_service import ResumeService
 
 
 class AppController:
@@ -15,6 +17,7 @@ class AppController:
         self.candidate_service = CandidateService()
         self.opportunity_service = OpportunityService()
         self.assessment_service = AssessmentService()
+        self.resume_service = ResumeService()
 
     def get_dashboard_stats(self):
         jobs = self.db.get_all_jobs()
@@ -95,6 +98,13 @@ class AppController:
     def get_latest_assessment(self, opportunity_id: int) -> Assessment | None:
         assessments = self.assessment_service.list_assessments(opportunity_id)
         return assessments[0] if assessments else None
+
+    def get_resumes(self):
+        candidate = self.get_candidate()
+        return self.resume_service.list_resumes(candidate.id)
+
+    def get_resume(self, resume_id: int) -> Resume | None:
+        return self.resume_service.get_resume(resume_id)
 
     def run_discovery(self):
         run = self.discovery_service.run_discovery()
