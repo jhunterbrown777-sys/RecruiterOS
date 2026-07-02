@@ -1,23 +1,16 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional
 
 
 @dataclass
 class Opportunity:
+    candidate_id: int
+    job_id: int
 
-    title: str
-    company: str
-    score: int
+    status: str = "SCOUTED"
 
-    fit_score: int
+    id: Optional[int] = None
 
-    posting_age_score: int
-    company_score: int
-    remote_score: int
-    salary_score: int
-    ats_score: int
-
-    priority: str
-
-    recommendation: str
-
-    reasoning: str
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
