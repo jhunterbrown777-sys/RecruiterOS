@@ -58,6 +58,9 @@ class MainWindow(QMainWindow):
         self.cover_letters_button.clicked.connect(self.show_cover_letters)
         self.documents_button.clicked.connect(self.show_documents)
 
+        self.document_page.open_resume_requested.connect(self.show_resume_and_select)
+        self.document_page.open_cover_letter_requested.connect(self.show_cover_letter_and_select)
+
         self.apply_styles()
 
     def show_settings(self):
@@ -79,6 +82,14 @@ class MainWindow(QMainWindow):
     def show_documents(self):
         self.document_page.refresh()
         self.pages.setCurrentWidget(self.document_page)
+
+    def show_resume_and_select(self, resume_id: int):
+        self.show_resume()
+        self.resume_page.select_resume(resume_id)
+
+    def show_cover_letter_and_select(self, cover_letter_id: int):
+        self.show_cover_letters()
+        self.cover_letter_page.select_cover_letter(cover_letter_id)
 
     def build_sidebar(self):
         sidebar = QVBoxLayout()

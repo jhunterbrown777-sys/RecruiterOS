@@ -227,6 +227,10 @@ class ResumePage(QWidget):
         self._select_resume(resume.id)
         self.create_result.setText(f"Created: {resume.title}")
 
+    def select_resume(self, resume_id: int):
+        """Public entry point for other pages to preselect a Resume here."""
+        self._select_resume(resume_id)
+
     def _select_resume(self, resume_id: int):
         for index in range(self.resume_list.count()):
             item = self.resume_list.item(index)

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -16,6 +16,9 @@ from models.document import DOCUMENT_TYPES
 
 
 class DocumentPage(QWidget):
+    open_resume_requested = Signal(int)
+    open_cover_letter_requested = Signal(int)
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
@@ -25,7 +28,7 @@ class DocumentPage(QWidget):
         header = QLabel("Documents")
         header.setObjectName("PageTitle")
 
-        subtitle = QLabel("Library of certificates, portfolio pieces, and other artifacts")
+        subtitle = QLabel("Library of resumes, cover letters, certificates, and other artifacts")
         subtitle.setObjectName("PageSubtitle")
 
         root.addWidget(header)
@@ -54,7 +57,7 @@ class DocumentPage(QWidget):
         root.addWidget(self.build_details_panel())
         root.addWidget(self.build_create_panel())
 
-        self._current_document_id = None
+        self._current_entry = None
 
         self.setLayout(root)
         self.refresh()
@@ -71,6 +74,10 @@ class DocumentPage(QWidget):
         self.details_placeholder = QLabel("Select a Document to see details.")
         self.details_placeholder.setObjectName("PageSubtitle")
         details_layout.addWidget(self.details_placeholder)
+
+        self.detail_source_note = QLabel("")
+        self.detail_source_note.setObjectName("PageSubtitle")
+        details_layout.addWidget(self.detail_source_note)
 
         self.detail_title_label = QLabel("Title")
         self.detail_title_input = QLineEdit()
@@ -104,6 +111,10 @@ class DocumentPage(QWidget):
         self.delete_button = QPushButton("Delete")
         self.delete_button.clicked.connect(self.delete_document)
         details_layout.addWidget(self.delete_button)
+
+        self.open_elsewhere_button = QPushButton("")
+        self.open_elsewhere_button.clicked.connect(self._open_elsewhere)
+        details_layout.addWidget(self.open_elsewhere_button)
 
         self.edit_result = QLabel("")
         self.edit_result.setObjectName("PageSubtitle")
@@ -157,9 +168,9 @@ class DocumentPage(QWidget):
         self.create_result.setText("")
         self.document_list.clear()
 
-        for document in self.controller.get_documents():
-            item = QListWidgetItem(self._list_item_text(document))
-            item.setData(Qt.ItemDataRole.UserRole, document)
+        for entry in self.controller.get_document_library():
+            item = QListWidgetItem(self._list_item_text(entry))
+            item.setData(Qt.ItemDataRole.UserRole, entry)
             self.document_list.addItem(item)
 
         self.document_list_empty_state.setVisible(self.document_list.count() == 0)
@@ -184,15 +195,15 @@ class DocumentPage(QWidget):
         self.new_content_input.clear()
 
         self.refresh()
-        self._select_document(document.id)
+        self._select_entry("document", document.id)
         self.create_result.setText(f"Created: {document.title}")
 
-    def _select_document(self, document_id: int):
+    def _select_entry(self, kind: str, entry_id: int):
         for index in range(self.document_list.count()):
             item = self.document_list.item(index)
-            document = item.data(Qt.ItemDataRole.UserRole)
+            entry = item.data(Qt.ItemDataRole.UserRole)
 
-            if document.id == document_id:
+            if entry.kind == kind and entry.id == entry_id:
                 item.setSelected(True)
                 self.document_list.setCurrentItem(item)
                 break
@@ -208,11 +219,20 @@ class DocumentPage(QWidget):
                 self._show_placeholder()
             return
 
-        document = selected[0].data(Qt.ItemDataRole.UserRole)
-        self._show_details(document)
+        entry = selected[0].data(Qt.ItemDataRole.UserRole)
+
+        if entry.kind == "document":
+            document = self.controller.get_document(entry.id)
+            self._show_editable_details(document)
+        elif entry.kind == "resume":
+            resume = self.controller.get_resume(entry.id)
+            self._show_readonly_details(resume, "Resume", "Open in Resume Workspace")
+        elif entry.kind == "cover_letter":
+            cover_letter = self.controller.get_cover_letter(entry.id)
+            self._show_readonly_details(cover_letter, "Cover Letter", "Open in Cover Letter Workspace")
 
     def save_document_content(self):
-        if self._current_document_id is None:
+        if self._current_entry is None or self._current_entry.kind != "document":
             return
 
         title = self.detail_title_input.text().strip()
@@ -223,39 +243,50 @@ class DocumentPage(QWidget):
 
         document_type = self.detail_type_combo.currentText()
         content = self.detail_content.toPlainText()
-        updated = self.controller.update_document_content(self._current_document_id, title, document_type, content)
+        updated = self.controller.update_document_content(self._current_entry.id, title, document_type, content)
 
         self.refresh()
-        self._select_document(updated.id)
+        self._select_entry("document", updated.id)
         self.edit_result.setText(f"Saved: {updated.title}")
 
     def duplicate_document(self):
-        if self._current_document_id is None:
+        if self._current_entry is None or self._current_entry.kind != "document":
             return
 
-        new_document = self.controller.duplicate_document(self._current_document_id)
+        new_document = self.controller.duplicate_document(self._current_entry.id)
 
         self.refresh()
-        self._select_document(new_document.id)
+        self._select_entry("document", new_document.id)
         self.edit_result.setText(f"Duplicated as version {new_document.version}: {new_document.title}")
 
     def delete_document(self):
-        if self._current_document_id is None:
+        if self._current_entry is None or self._current_entry.kind != "document":
             return
 
-        self.controller.delete_document(self._current_document_id)
+        self.controller.delete_document(self._current_entry.id)
         self.refresh()
         self.edit_result.setText("Document deleted.")
 
-    def _list_item_text(self, document) -> str:
-        return f"{document.title} — {document.document_type} (v{document.version})"
+    def _open_elsewhere(self):
+        if self._current_entry is None:
+            return
+
+        if self._current_entry.kind == "resume":
+            self.open_resume_requested.emit(self._current_entry.id)
+        elif self._current_entry.kind == "cover_letter":
+            self.open_cover_letter_requested.emit(self._current_entry.id)
+
+    def _list_item_text(self, entry) -> str:
+        suffix = "" if entry.editable else " (read-only)"
+        return f"{entry.title} — {entry.document_type} (v{entry.version}){suffix}"
 
     def _show_placeholder(self, message: str = "Select a Document to see details."):
-        self._current_document_id = None
+        self._current_entry = None
         self.details_placeholder.setText(message)
         self.details_placeholder.setVisible(True)
 
         for widget in (
+            self.detail_source_note,
             self.detail_title_label,
             self.detail_title_input,
             self.detail_type_label,
@@ -266,12 +297,18 @@ class DocumentPage(QWidget):
             self.save_content_button,
             self.duplicate_button,
             self.delete_button,
+            self.open_elsewhere_button,
         ):
             widget.setVisible(False)
 
-    def _show_details(self, document):
-        self._current_document_id = document.id
+    def _show_editable_details(self, document):
+        self._current_entry = self._entry_for("document", document.id)
         self.details_placeholder.setVisible(False)
+        self.detail_source_note.setVisible(False)
+
+        self.detail_title_input.setReadOnly(False)
+        self.detail_type_combo.setEnabled(True)
+        self.detail_content.setReadOnly(False)
 
         self.detail_title_input.setText(document.title)
         self.detail_type_combo.setCurrentText(document.document_type)
@@ -295,3 +332,52 @@ class DocumentPage(QWidget):
             self.delete_button,
         ):
             widget.setVisible(True)
+
+        self.open_elsewhere_button.setVisible(False)
+
+    def _show_readonly_details(self, record, type_label: str, open_button_text: str):
+        self._current_entry = self._entry_for(
+            "resume" if type_label == "Resume" else "cover_letter", record.id
+        )
+        self.details_placeholder.setVisible(False)
+        self.detail_source_note.setText(f"This {type_label} is managed in its own workspace — read-only here.")
+        self.detail_source_note.setVisible(True)
+
+        self.detail_title_input.setReadOnly(True)
+        self.detail_type_combo.setEnabled(False)
+        self.detail_content.setReadOnly(True)
+
+        self.detail_title_input.setText(record.title)
+        self.detail_type_combo.setCurrentText(type_label)
+        self.detail_version.setText(f"Version: {record.version}")
+        self.detail_dates.setText(
+            f"Created: {record.created_at.strftime('%Y-%m-%d %H:%M')}  |  "
+            f"Updated: {record.updated_at.strftime('%Y-%m-%d %H:%M')}"
+        )
+        self.detail_content.setPlainText(record.content or "")
+
+        for widget in (
+            self.detail_title_label,
+            self.detail_title_input,
+            self.detail_type_label,
+            self.detail_type_combo,
+            self.detail_version,
+            self.detail_dates,
+            self.detail_content,
+        ):
+            widget.setVisible(True)
+
+        for widget in (self.save_content_button, self.duplicate_button, self.delete_button):
+            widget.setVisible(False)
+
+        self.open_elsewhere_button.setText(open_button_text)
+        self.open_elsewhere_button.setVisible(True)
+
+    def _entry_for(self, kind: str, entry_id: int):
+        for index in range(self.document_list.count()):
+            entry = self.document_list.item(index).data(Qt.ItemDataRole.UserRole)
+
+            if entry.kind == kind and entry.id == entry_id:
+                return entry
+
+        return None

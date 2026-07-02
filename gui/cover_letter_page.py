@@ -236,6 +236,10 @@ class CoverLetterPage(QWidget):
         self._select_cover_letter(cover_letter.id)
         self.create_result.setText(f"Created: {cover_letter.title}")
 
+    def select_cover_letter(self, cover_letter_id: int):
+        """Public entry point for other pages to preselect a Cover Letter here."""
+        self._select_cover_letter(cover_letter_id)
+
     def _select_cover_letter(self, cover_letter_id: int):
         for index in range(self.cover_letter_list.count()):
             item = self.cover_letter_list.item(index)

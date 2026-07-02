@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from datetime import datetime
+
 from database.sqlite_manager import SQLiteManager
 from models.assessment import Assessment
 from models.candidate import Candidate
@@ -12,6 +15,26 @@ from services.discovery_service import DiscoveryService
 from services.document_service import DocumentService
 from services.opportunity_service import OpportunityService
 from services.resume_service import ResumeService
+
+
+@dataclass
+class DocumentLibraryEntry:
+    """A row in the unified Documents Workspace library.
+
+    Composes native Documents with Resumes and Cover Letters so the
+    library can browse every supported type in one list, per
+    docs/WORKSPACE_ARCHITECTURE.md's Documents Workspace description.
+    Resume/Cover Letter entries are read-only here -- editing them
+    happens in their own workspace.
+    """
+
+    kind: str  # "document" | "resume" | "cover_letter"
+    id: int
+    title: str
+    document_type: str
+    version: int
+    updated_at: datetime
+    editable: bool
 
 
 class AppController:
@@ -190,6 +213,50 @@ class AppController:
     def get_documents(self):
         candidate = self.get_candidate()
         return self.document_service.list_documents(candidate.id)
+
+    def get_document_library(self) -> list[DocumentLibraryEntry]:
+        """List every Document, Resume, and Cover Letter as one browsable library."""
+        entries = [
+            DocumentLibraryEntry(
+                kind="document",
+                id=document.id,
+                title=document.title,
+                document_type=document.document_type,
+                version=document.version,
+                updated_at=document.updated_at,
+                editable=True,
+            )
+            for document in self.get_documents()
+        ]
+
+        entries += [
+            DocumentLibraryEntry(
+                kind="resume",
+                id=resume.id,
+                title=resume.title,
+                document_type="Resume",
+                version=resume.version,
+                updated_at=resume.updated_at,
+                editable=False,
+            )
+            for resume in self.get_resumes()
+        ]
+
+        entries += [
+            DocumentLibraryEntry(
+                kind="cover_letter",
+                id=cover_letter.id,
+                title=cover_letter.title,
+                document_type="Cover Letter",
+                version=cover_letter.version,
+                updated_at=cover_letter.updated_at,
+                editable=False,
+            )
+            for cover_letter in self.get_cover_letters()
+        ]
+
+        entries.sort(key=lambda entry: entry.updated_at, reverse=True)
+        return entries
 
     def get_document(self, document_id: int) -> Document | None:
         return self.document_service.get_document(document_id)
